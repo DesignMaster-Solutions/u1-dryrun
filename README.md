@@ -49,7 +49,7 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 ## What it does not do
 
-I do not own a U1, so **this has not been validated on a physical machine**. The physical evidence for the example above is the forum report it reproduces. If you have a U1 and a print that scratched, or one that failed mid-way, please run it and open an issue with the result, either way.
+**This has not been validated on a physical U1 yet.** The physical evidence for the example above is the forum report it reproduces. If you have a U1 and a print that scratched, or one that failed mid-way, please run it and open an issue with the result, either way.
 
 - No physics: no heating, no ooze, no flow, no real sensors. Motion time excludes heating waits.
 - Commands that wait on hardware are skipped and listed in every report: defect detection, timelapse, auto feed, flow calibration, bed mesh, chamber wait.
