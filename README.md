@@ -1,6 +1,6 @@
 # u1-dryrun
 
-Run a sliced G-code file through Snapmaker's real U1 firmware code, on your laptop or in CI, with no printer attached. In about 10 seconds you learn whether the firmware would stop the print, and whether the nozzle would drag across a surface that is already finished.
+Run a sliced G-code file through Snapmaker's real U1 firmware code, on your laptop or in CI, with no printer attached. In seconds you learn whether the firmware would stop the print, and whether the nozzle would drag across a surface that is already finished.
 
 It runs [Snapmaker/u1-klipper](https://github.com/Snapmaker/u1-klipper) in Klipper's batch mode with Snapmaker's own `printer.cfg`, kinematics, limits and tool-change code. There is no reimplementation of the firmware: if the firmware changes, rebuild against the new commit.
 
@@ -29,6 +29,8 @@ The same regression shows up here without a printer. Same model, same default U1
 | Snapmaker Orca 2.4.1 | travels to the tower at Z3.05, the height of the surface it just printed | `SCAR line 38910`, 82 mm of finished surface at 0.00 mm clearance, exit 1 |
 
 The missing lift only hurts when the path crosses the part. On the small two-color coaster I tried first, the last extrusion was at the part's edge next to the tower and both versions came out clean. That is why a check on the real toolpath is better than reading the G-code for a `Z` word.
+
+![Top view of the same part from both slicers: 2.4.0 lifts and travels clean, 2.4.1 drags 82 mm across the finished surface](docs/orca-2.4.0-vs-2.4.1.png)
 
 As a fidelity check, the firmware's own motion time lands next to the slicer's estimate, computed by different code: 7120 s against 1h 59m 13s (7153 s) on 2.4.1, and 7264 s against 2h 1m 36s (7296 s) on 2.4.0.
 
