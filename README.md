@@ -64,7 +64,9 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 ## What it does not do
 
-**This has not been validated on a physical U1 yet.** The physical evidence for the example above is the forum report it reproduces. If you have a U1 and a print that scratched, or one that failed mid-way, please run it and open an issue with the result, either way.
+**Field report, 2 November 2026.** A U1 owner ran it on Linux Mint on a vanilla OrcaSlicer file he had already printed without trouble ([his post](https://forum.snapmaker.com/t/u1-dry-run-test-a-sliced-file-on-the-real-u1-firmware-no-printer-needed/43986/19)): 1,038,009 moves accepted, 14,091 s of motion for a file named 4h7m (heating is not counted), clean. So a known-good print produced no false alarm on someone else's machine. His first run also found a real bug, and his output exposed a second one (the [4 KB read](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/786819e) and the [arc attribution](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/6328497)), both fixed the same day.
+
+**A predicted scar has not been checked against a physical print yet.** The physical evidence for the example above is still the forum report it reproduces. If you have a U1 and a print that scratched, or one that failed mid-way, please run it and open an issue with the result, either way.
 
 - No physics: no heating, no ooze, no flow, no real sensors. Motion time excludes heating waits.
 - Commands that wait on hardware are skipped and listed in every report: defect detection, timelapse, auto feed, flow calibration, bed mesh, chamber wait.
