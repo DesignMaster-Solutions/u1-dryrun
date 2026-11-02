@@ -1,0 +1,14 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s tests
+      - run: docker build -t u1-dryrun .
+      - run: tests/e2e.sh
+      - name: The action itself accepts a clean file
+        uses: ./
+        with:
+          gcode: examples/sign-orca-2.4.0.gcode.gz

@@ -1,0 +1,19 @@
+name: U1 Dry Run
+description: Run a sliced G-code through Snapmaker's real U1 firmware code, with no printer. Fails on surface scars or firmware errors.
+inputs:
+  gcode:
+    description: Path to the .gcode or .gcode.3mf file
+    required: true
+  clearance:
+    description: Millimetres above a finished surface below which a travel counts as a scar
+    default: "0.05"
+runs:
+  using: docker
+  image: Dockerfile
+  args:
+    - ${{ inputs.gcode }}
+    - --clearance
+    - ${{ inputs.clearance }}
+branding:
+  icon: check-circle
+  color: orange
