@@ -4,7 +4,7 @@ import re
 import sys
 import zipfile
 
-MOVE = re.compile(r"^\s*G[01](\s|$)", re.I)
+MOVE = re.compile(r"^\s*G[0123](\s|$)", re.I)
 
 
 def read_gcode(path):

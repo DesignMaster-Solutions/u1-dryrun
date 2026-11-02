@@ -84,9 +84,11 @@ class DryrunTracer:
 
     def _ready(self):
         gcode = self.printer.lookup_object("gcode")
-        for cmd in ("G0", "G1"):
+        # Arc segments call gcode_move.cmd_G1 directly, bypassing the G1 dispatcher.
+        for cmd in ("G0", "G1", "G2", "G3"):
             orig = gcode.register_command(cmd, None)
-            gcode.register_command(cmd, self._wrap(orig))
+            if orig is not None:
+                gcode.register_command(cmd, self._wrap(orig))
         gcode.register_command("DRYRUN_LINE", self._set_line)
         orig_error = gcode._respond_error
 
