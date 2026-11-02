@@ -1,0 +1,127 @@
+{
+  "brand": "U1 Dry Run · github.com/DesignMaster-Solutions/u1-dryrun · narration: synthetic voice",
+  "voice": "Samantha",
+  "rate": 180,
+  "bg": "#101820",
+  "accent": "#f28c28",
+  "out": "../docs/demo.mp4",
+  "scenes": [
+    {
+      "title": "U1 Dry Run",
+      "lines": [
+        "Test a sliced file on Snapmaker's real U1 firmware, with no printer on the desk.",
+        "",
+        "Today the only way to find out that a slicer release, a start G-code change",
+        "or a firmware mod broke something is to print and look."
+      ],
+      "say": "U1 Dry Run tests a sliced file on Snapmaker's real U1 firmware, with no printer on the desk. Today, the only way to find out that a slicer release or a start G-code change broke something is to print and look."
+    },
+    {
+      "title": "The real firmware code, in batch mode",
+      "lines": [
+        "Snapmaker's u1-klipper, pinned to firmware 2.0.0",
+        "Snapmaker's own printer.cfg, limits and tool-change macros",
+        "The dock is simulated from the moves, so the tool change runs in full",
+        "Only sections for absent hardware are off: MQTT, RFID, accelerometers, homing"
+      ],
+      "say": "It runs Snapmaker's own Klipper code, pinned to firmware two point zero, with Snapmaker's own config, limits and tool-change macros. The dock is simulated from the moves, so the firmware's tool change runs in full. Only the sections for hardware that is not there are turned off."
+    },
+    {
+      "title": "Orca 2.4.0: clean, exit 0",
+      "lines": [
+        "A two-color plate, default U1 profiles, official release. Real output, highlighted. 17 s on a laptop."
+      ],
+      "mono": [
+        "$ docker run --rm -v \"$PWD:/work\" u1-dryrun sign-orca-2.4.0.gcode.gz",
+        "sign-orca-2.4.0.gcode.gz: 45773 moves, 15 tool changes",
+        "motion time 7264 s (no heating), about 54 s of it firmware tool-change motion",
+        "  extruder: 90506 mm of filament",
+        "  extruder1: 5540 mm of filament",
+        "✔ clean: firmware accepted every command, no travel across a finished surface",
+        "exit code 0"
+      ],
+      "say": "Here is a two-color plate, sliced with the official Orca two point four point zero and the default U1 profiles. Forty-six thousand moves and fifteen tool changes, in seventeen seconds on a laptop. The firmware accepts every command, and no travel crosses a finished surface. Exit code zero."
+    },
+    {
+      "title": "Orca 2.4.1: a scar, exit 1",
+      "lines": [
+        "Same part, same profiles, the next release. Real output, highlighted."
+      ],
+      "mono": [
+        "$ docker run --rm -v \"$PWD:/work\" u1-dryrun sign-orca-2.4.1.gcode.gz",
+        "sign-orca-2.4.1.gcode.gz: 34368 moves, 15 tool changes",
+        "motion time 7120 s (no heating), about 53 s of it firmware tool-change motion",
+        "✖ SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05",
+        "✖ crosses 82.0 mm of finished surface, clearance 0.00 mm",
+        "exit code 1"
+      ],
+      "say": "Same part, same profiles, the next release. Line thirty-eight thousand nine hundred ten travels at Z three point zero five, the height of the surface it just printed, and crosses eighty-two millimeters of it with zero clearance. Exit code one."
+    },
+    {
+      "title": "Same part, top view",
+      "lines": [
+        "2.4.0 lifts, then travels.",
+        "2.4.1 does not lift.",
+        "",
+        "This is the regression",
+        "pipewrx found on the forum",
+        "by printing. Here it shows",
+        "up with no printer."
+      ],
+      "shots": ["../docs/orca-2.4.0-vs-2.4.1.png"],
+      "say": "From above, two point four point zero lifts, then travels. Two point four point one does not lift. This is the same regression that the forum user pipewrx found by printing. Here, it shows up with no printer."
+    },
+    {
+      "title": "A report for every run",
+      "lines": [
+        "report.html and report.json",
+        "after each run. Self-contained,",
+        "so it can go in a bug report.",
+        "",
+        "These two are live:",
+        "designmaster-solutions",
+        ".github.io/u1-dryrun",
+        "/sample/orca-2.4.1.html"
+      ],
+      "shots": ["report-2.4.1.png"],
+      "say": "Every run leaves a self-contained report, with the part in grey and the scar paths in red, that you can attach to a bug report. The sample reports are online, and the link is in the description."
+    },
+    {
+      "title": "Firmware errors, with the line",
+      "lines": [
+        "A move past the bed gets the firmware's own answer. Real output, highlighted."
+      ],
+      "mono": [
+        "$ docker run --rm -v \"$PWD:/work\" u1-dryrun out-of-range.gcode",
+        "out-of-range.gcode: 31 moves, 1 tool changes",
+        "✖ FIRMWARE ERROR near line 6: Move out of range on X axis: 400.000 100.000 5.000 [0.000]",
+        "exit code 2"
+      ],
+      "say": "A move past the bed gets the firmware's own answer, with the G-code line. Exit code two."
+    },
+    {
+      "title": "In CI, on every push",
+      "lines": [
+        "Exit codes make it a regression test for slicer forks, start G-code changes and firmware mods."
+      ],
+      "mono": [
+        "- uses: DesignMaster-Solutions/u1-dryrun@main",
+        "  with:",
+        "    gcode: out/plate_1.gcode"
+      ],
+      "say": "The exit codes make it a regression test for slicer forks, start G-code changes and firmware mods, in GitHub Actions or on a laptop."
+    },
+    {
+      "title": "What it does not do",
+      "lines": [
+        "No physics: no heating, no ooze, no flow, no real sensors.",
+        "A scar is a geometric prediction, not a measurement.",
+        "It has not been validated on a physical U1 yet.",
+        "",
+        "If you have a U1 and a print that scratched, run the file and tell me if they match.",
+        "Forum topic: U1 Dry Run, in the Innovation Fund. GPL-3.0."
+      ],
+      "say": "What it does not do: there is no physics here, no heating, no ooze, no real sensors. A scar is a geometric prediction, and this has not been validated on a physical U1 yet. If you have a U1 and a print that scratched, run the file and tell me if they match."
+    }
+  ]
+}
