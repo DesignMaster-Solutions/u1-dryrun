@@ -17,6 +17,8 @@ SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05 
 
 Exit code: `0` clean, `1` scars found, `2` the firmware rejected the file. A self-contained `report.html` and `report.json` land in `u1-dryrun-report/`.
 
+Demo video, 2 minutes: https://designmaster-solutions.github.io/u1-dryrun/demo.mp4 (real output, synthetic voice). Sample reports from real runs: [Orca 2.4.0, clean](https://designmaster-solutions.github.io/u1-dryrun/sample/orca-2.4.0.html) and [Orca 2.4.1, scar](https://designmaster-solutions.github.io/u1-dryrun/sample/orca-2.4.1.html).
+
 ## What it found first
 
 In October a user reported on the forum that [Orca 2.4.1 scratches finished prints during the final toolchange, and 2.4.0 does not](https://forum.snapmaker.com/t/snapmaker-orca-2-4-1-nozzle-scratches-prints-during-final-toolchange-works-in-2-4-0/43865). They found it the expensive way: by printing, then comparing G-code by hand.
