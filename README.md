@@ -17,6 +17,18 @@ SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05 
 
 Exit code: `0` clean, `1` scars found, `2` the firmware rejected the file. A self-contained `report.html` and `report.json` land in `u1-dryrun-report/`.
 
+It reads files from Snapmaker Orca and from the official OrcaSlicer: real files from both are in [`examples/`](examples/) and run through the firmware on every push.
+
+### Installing Docker
+
+- **macOS or Windows:** install Docker Desktop and start it once.
+- **Linux (Ubuntu, Mint, Debian):**
+  ```
+  sudo apt install docker.io docker-buildx
+  sudo usermod -aG docker $USER
+  ```
+  Then log out and back in, or reboot, so the group change applies. `docker version` should list both Client and Server without a permission error. `$USER` is typed as is; the shell fills in your login name.
+
 Demo video, 2 minutes: https://designmaster-solutions.github.io/u1-dryrun/demo.mp4 (real output, synthetic voice). Sample reports from real runs: [Orca 2.4.0, clean](https://designmaster-solutions.github.io/u1-dryrun/sample/orca-2.4.0.html) and [Orca 2.4.1, scar](https://designmaster-solutions.github.io/u1-dryrun/sample/orca-2.4.1.html).
 
 ## What it found first
@@ -46,8 +58,9 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 1. `Dockerfile` builds the pinned `u1-klipper` commit (Snapmaker's firmware 2.0.0) and generates the data dictionaries for its MCUs from Snapmaker's own Kconfig files.
 2. `dryrun/prep_cfg.py` comments out the config sections that talk to hardware or services absent here (MQTT, RFID, accelerometers, physical homing). Everything else loads as shipped.
-3. `dryrun/dryrun_tracer.py` is a Klipper extras module. It records every `toolhead.move`, turns `G28` into "the axis is at its endstop", and simulates the dock: at the dock Y, sliding X onto a tool's park X releases it and sliding off grabs it. That lets the firmware's own `_cmd_SWITCH_EXTRUDER` run its full sequence and pass its own park and pick checks.
-4. `dryrun/analyze.py` builds a height map from the extrusion moves and looks for travel across finished cells.
+3. `dryrun/prep_gcode.py` tags each move with its line number, homes all axes before the first line, replaces the slicer's start block with `G28` and the first tool, and turns non-ASCII characters (the U1 start G-code has Chinese comments) into `_`, because Klipper's batch reader drops any 4 KB block that cuts a UTF-8 character.
+4. `dryrun/dryrun_tracer.py` is a Klipper extras module. It records every `toolhead.move`, turns `G28` into "the axis is at its endstop", and simulates the dock: at the dock Y, sliding X onto a tool's park X releases it and sliding off grabs it. That lets the firmware's own `_cmd_SWITCH_EXTRUDER` run its full sequence and pass its own park and pick checks.
+5. `dryrun/analyze.py` builds a height map from the extrusion moves and looks for travel across finished cells.
 
 ## What it does not do
 

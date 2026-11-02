@@ -10,5 +10,6 @@ run() {  # file expected_exit_code
 }
 run sign-orca-2.4.0.gcode.gz 0
 run sign-orca-2.4.1.gcode.gz 1
+run ring-orcaslicer-2.4.2.gcode.gz 0
 run out-of-range.gcode 2
 echo e2e ok
