@@ -29,6 +29,9 @@ class PrepTest(unittest.TestCase):
         self.assertEqual(out[0], "G28")
         self.assertIn("G1 X20 Y20 Z0.2 ;L4", out)
 
+    def test_empty_file_does_not_crash(self):
+        self.assertEqual(prep_gcode.tag_lines(""), "G28\n\n")
+
 
 if __name__ == "__main__":
     unittest.main()

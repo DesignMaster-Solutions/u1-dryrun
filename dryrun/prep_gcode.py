@@ -50,10 +50,9 @@ def tag_lines(text):
     for i, line in enumerate(lines, 1):
         out.append("%s ;L%d" % (line, i) if MOVE.match(line) else line)
     # Homed from the start, whatever the slicer's start block does or whether it is found.
-    out[0] = "G28\n" + out[0]
     # Klipper's batch reader decodes each 4096-byte read on its own and silently drops one that
     # cuts a UTF-8 character (the U1 start G-code has Chinese comments). ASCII cannot be cut.
-    return NON_ASCII.sub("_", "\n".join(out)) + "\n"
+    return NON_ASCII.sub("_", "G28\n" + "\n".join(out)) + "\n"
 
 
 if __name__ == "__main__":
