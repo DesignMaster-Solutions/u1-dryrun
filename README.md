@@ -10,8 +10,8 @@ $ docker run --rm -v "$PWD:/work" u1-dryrun my-print.gcode.3mf
 
 sign-orca-2.4.1.gcode.gz: 34368 moves, 15 tool changes
 motion time 7120 s (no heating), about 53 s of it firmware tool-change motion
-  extruder: 7012 mm of filament
-  extruder1: 4518 mm of filament
+  extruder: 91571 mm of filament
+  extruder1: 5620 mm of filament
 SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05 crosses 82.0 mm of finished surface, clearance 0.00 mm
 ```
 
