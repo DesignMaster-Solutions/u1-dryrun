@@ -4,6 +4,8 @@ Run a sliced G-code file through Snapmaker's real U1 firmware code, on your lapt
 
 It runs [Snapmaker/u1-klipper](https://github.com/Snapmaker/u1-klipper) in Klipper's batch mode with Snapmaker's own `printer.cfg`, kinematics, limits and tool-change code. There is no reimplementation of the firmware: if the firmware changes, rebuild against the new commit.
 
+Entered in the Snapmaker Innovation Fund, Phase 2: [U1 Dry Run on the Snapmaker forum](https://forum.snapmaker.com/t/43986). The same firmware runner drives [U1 Fix Pack](https://github.com/DesignMaster-Solutions/u1-fixpack), which reproduces two open u1-klipper bugs and tests a patch for each.
+
 ```
 $ docker build -t u1-dryrun https://github.com/DesignMaster-Solutions/u1-dryrun.git
 $ docker run --rm -v "$PWD:/work" u1-dryrun my-print.gcode.3mf
