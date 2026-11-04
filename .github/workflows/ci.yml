@@ -3,12 +3,17 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 7ac453b = firmware 2.1.0 (the Dockerfile default), 93cb12f = 2.0.0
+        ref: [7ac453b, 93cb12f]
     steps:
       - uses: actions/checkout@v4
       - run: python3 -m unittest discover -s tests
-      - run: docker build -t u1-dryrun .
+      - run: docker build --build-arg U1_KLIPPER_REF=${{ matrix.ref }} -t u1-dryrun .
       - run: tests/e2e.sh
       - name: The action itself accepts a clean file
+        if: matrix.ref == '7ac453b'
         uses: ./
         with:
           gcode: examples/sign-orca-2.4.0.gcode.gz

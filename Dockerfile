@@ -1,8 +1,9 @@
 FROM debian:bookworm-slim
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends gcc gcc-arm-none-eabi libnewlib-arm-none-eabi binutils-arm-none-eabi make python3 python3-dev python3-pip libffi-dev git ca-certificates >/dev/null
 RUN pip3 install --break-system-packages -q "cffi==1.17.1" "greenlet>=3" "Jinja2==3.1.4" "markupsafe" "pyserial" "paho-mqtt" "numpy" 2>&1 | tail -1
-# Pinned so results do not change under your feet; 93cb12f is Snapmaker's "firmware 2.0.0" release.
-ARG U1_KLIPPER_REF=93cb12f
+# Pinned so results do not change under your feet; 7ac453b is Snapmaker's "firmware 2.1.0" release (4 Nov 2026).
+# Still on 2.0.0? docker build --build-arg U1_KLIPPER_REF=93cb12f -t u1-dryrun .  (CI checks both)
+ARG U1_KLIPPER_REF=7ac453b
 RUN git clone -q https://github.com/Snapmaker/u1-klipper.git /opt/klipper && git -C /opt/klipper checkout -q $U1_KLIPPER_REF
 WORKDIR /opt/klipper
 # one data dictionary per MCU type, built from Snapmaker's own Kconfig files

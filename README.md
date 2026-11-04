@@ -58,7 +58,7 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 ## How it works
 
-1. `Dockerfile` builds the pinned `u1-klipper` commit (Snapmaker's firmware 2.0.0) and generates the data dictionaries for its MCUs from Snapmaker's own Kconfig files.
+1. `Dockerfile` builds the pinned `u1-klipper` commit (Snapmaker's firmware 2.1.0, released 4 November 2026; `--build-arg U1_KLIPPER_REF=93cb12f` builds 2.0.0, and CI runs every check on both) and generates the data dictionaries for its MCUs from Snapmaker's own Kconfig files.
 2. `dryrun/prep_cfg.py` comments out the config sections that talk to hardware or services absent here (MQTT, RFID, accelerometers, physical homing). Everything else loads as shipped.
 3. `dryrun/prep_gcode.py` tags each move with its line number, homes all axes before the first line, replaces the slicer's start block with `G28` and the first tool, and turns non-ASCII characters (the U1 start G-code has Chinese comments) into `_`, because Klipper's batch reader drops any 4 KB block that cuts a UTF-8 character.
 4. `dryrun/dryrun_tracer.py` is a Klipper extras module. It records every `toolhead.move`, turns `G28` into "the axis is at its endstop", and simulates the dock: at the dock Y, sliding X onto a tool's park X releases it and sliding off grabs it. That lets the firmware's own `_cmd_SWITCH_EXTRUDER` run its full sequence and pass its own park and pick checks.
@@ -66,7 +66,7 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 ## What it does not do
 
-**Field report, 2 November 2026.** A U1 owner ran it on Linux Mint on a vanilla OrcaSlicer file they had already printed without trouble ([their post](https://forum.snapmaker.com/t/u1-dry-run-test-a-sliced-file-on-the-real-u1-firmware-no-printer-needed/43986/19)): 1,038,009 moves accepted, 14,091 s of motion for a file named 4h7m (heating is not counted), clean. So a known-good print produced no false alarm on someone else's machine. His first run also found a real bug, and his output exposed a second one (the [4 KB read](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/786819e) and the [arc attribution](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/6328497)), both fixed the same day.
+**Field report, 2 November 2026.** A U1 owner ran it on Linux Mint on a vanilla OrcaSlicer file they had already printed without trouble ([their post](https://forum.snapmaker.com/t/u1-dry-run-test-a-sliced-file-on-the-real-u1-firmware-no-printer-needed/43986/19)): 1,038,009 moves accepted, 14,091 s of motion for a file named 4h7m (heating is not counted), clean. So a known-good print produced no false alarm on someone else's machine. Their first run also found a real bug, and their output exposed a second one (the [4 KB read](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/786819e) and the [arc attribution](https://github.com/DesignMaster-Solutions/u1-dryrun/commit/6328497)), both fixed the same day.
 
 **A predicted scar has not been checked against a physical print yet.** The physical evidence for the example above is still the forum report it reproduces. If you have a U1 and a print that scratched, or one that failed mid-way, please run it and open an issue with the result, either way.
 
