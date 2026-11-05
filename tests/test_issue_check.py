@@ -71,6 +71,13 @@ class IssueCheckTest(unittest.TestCase):
         self.assertIn("firmware 2.1.0", r)
         self.assertIn("did not finish", issue_check.reply("", -1, "2.1.0", "https://run"))
 
+    def test_a_file_that_never_arrived_is_not_reported_as_a_run(self):
+        r = issue_check.reply("no link found", issue_check.FETCH_FAILED, "2.1.0", "https://run")
+        self.assertIn("no link found", r)
+        self.assertIn("Edit this issue", r)
+        self.assertNotIn("u1-klipper", r)
+        self.assertNotIn("artifact", r)
+
 
 if __name__ == "__main__":
     unittest.main()

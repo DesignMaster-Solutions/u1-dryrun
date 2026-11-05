@@ -19,6 +19,7 @@ import zipfile
 FIRMWARE = {"2.1.0": "7ac453b", "2.0.0": "93cb12f"}  # same commits as ci.yml and the Dockerfile
 DEFAULT = "2.1.0"
 MAX_BYTES = 100 * 1024 * 1024
+FETCH_FAILED = -2  # rc when the file never reached the firmware
 URL = re.compile(r"https://[^\s()<>\"'\[\]]+")
 
 
@@ -68,6 +69,9 @@ def download(url):
 
 
 def reply(summary, rc, version, run_url):
+    if rc == FETCH_FAILED:
+        return ("**I could not read the file:** %s.\n\nEdit this issue (attach the zipped file or fix the link) "
+                "and the check runs again." % summary.strip()[:2000])
     verdict = {
         0: "**Clean.** The firmware accepted every command and no travel crosses a finished surface.",
         1: "**Scar found.** At least one travel crosses a surface that is already printed, with no clearance.",
@@ -99,9 +103,9 @@ def main(cmd, d):
             ok = "true"
         except Exception as e:  # every failure becomes the reply, never a silent red run
             with open(os.path.join(d, "summary.txt"), "w") as f:
-                f.write("could not read the file: %s" % e)
+                f.write(str(e))
             with open(os.path.join(d, "rc"), "w") as f:
-                f.write("-1")
+                f.write(str(FETCH_FAILED))
             name, ok = "", "false"
         print("ok=%s\nname=%s\nversion=%s\nref=%s" % (ok, name, version, FIRMWARE[version]))
     elif cmd == "reply":
