@@ -11,6 +11,9 @@ run() {  # file expected_exit_code
 run sign-orca-2.4.0.gcode.gz 0
 run sign-orca-2.4.1.gcode.gz 1
 run ring-orcaslicer-2.4.2.gcode.gz 0
+# A print that really scratched on a real U1 (file shared by its owner, see README): the same move must keep being flagged.
+run helado-pipewrx-orca-2.4.1.gcode.gz 1
+echo "$out" | grep -q 'SCAR line 130731 ' || { echo "FAIL helado: the scar at line 130731 moved or vanished"; exit 1; }
 run out-of-range.gcode 2
 # Keep the generated report inside the container; validate both G2 and G3 provenance.
 docker run --rm -v "$PWD/..:/work:ro" --entrypoint sh "$image" -c \
