@@ -81,6 +81,12 @@ The second effect explains why 2.4.1 purges on the same layer: the patched build
 the 0.4 mm `z_hop`, so the purge height was already set when the final purge started. Only a travel writes it, and the
 branch 2.4.1 skips is that travel, with the unretract after it.
 
+Same-source check: the fork also built the parent of the fix commit, `f5fd7289e`, without the patch
+([run 41965190378](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41965190378)). It sliced the plate
+exactly like the official 2.4.1 AppImage, apart from the timestamp line, so the four upstream commits on the branch change
+nothing here and `examples/sign-orca-2.4.1-linux.gcode.gz` is also the same-source base. Against it the A/B passes
+(16 blocks each, none changed but the final purge) and the dry run flags the same scar at line 38911 on both firmwares.
+
 How a build of the fix is judged: slice the same plate with the patched build and with the same source
 without the patch, then run `python3 tools/ab_final_purge.py base.gcode patched.gcode`. It passes only if
 the base still has the bare travel into the final purge, the patched file does not, and every other tool
@@ -93,6 +99,4 @@ change block is identical line for line. The fork builds both on Linux
 - Why 2.4.0 stayed safe looks like this, from reading the code: there the final purge landed one layer higher
   (Z3.25 over the last object layer at Z3.05), so `finalize()` called `change_layer()`, which sets
   `m_need_change_layer_lift_z`, and that term of the old condition produced the lifted travel.
-- The A/B above uses the official AppImage as the base. The same source without the patch is still building
-  ([run 41965190378](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41965190378)).
 - No one has printed with the patched build yet: a dry run cannot say what the nozzle does to the plastic.
