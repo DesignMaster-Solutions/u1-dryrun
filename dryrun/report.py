@@ -18,6 +18,12 @@ def summary(r):
                    % (s["line"], s["source"], s["tool"], s["from"], s["to"], s["z"], s["length_mm"], s["clearance_mm"]))
     if r.get("skipped_commands"):
         out.append("not exercised (no such hardware here): " + ", ".join(r["skipped_commands"]))
+    m = r.get("start_margin")
+    if m:
+        out.append("start block: line %d (%s) leaves %.2f mm to the %s limit: a head with a %s offset %s %s%.2f mm"
+                   " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
+                   % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
+                      "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
     if not r["errors"] and not r["scars"]:
         out.append("clean: firmware accepted every command, no travel across a finished surface")
     return "\n".join(out)

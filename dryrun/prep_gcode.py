@@ -41,6 +41,39 @@ def strip_start_block(lines):
     return out, cut
 
 
+# U1 travel limits: [stepper_x] and [stepper_y] position_min/position_max in the firmware's
+# printer.cfg (same on 2.0.0 and 2.1.0).
+LIMITS = {"X": (0.0, 271.0), "Y": (0.0, 335.0)}
+AXIS = re.compile(r"\b([XY])(-?\d*\.?\d+)")
+
+
+def start_block_margin(lines):
+    """The start block's explicit absolute X/Y target closest to a travel limit, or None.
+
+    The start block is not run (see strip_start_block), but the firmware adds the active head's
+    XY offset to each of its moves. Offsets are measured from the midpoint of the four heads
+    (extruder.py get_center_base_position), so the lowest head sits at minus half the spread, and
+    a target closer to a limit than that offset is refused (forum topic 44046). Relative moves
+    and axes a line leaves out are not guessed: macros before them move the head.
+    """
+    first = next((i for i, l in enumerate(lines) if l.startswith(";LAYER_CHANGE")), None)
+    if first is None:
+        return None
+    absolute, best = True, None
+    for i in range(first):
+        code = lines[i].split(";", 1)[0].strip().upper()
+        if code.startswith(("G90", "G91")):
+            absolute = code.startswith("G90")
+        elif absolute and MOVE.match(code):
+            for axis, value in AXIS.findall(code):
+                lo, hi = LIMITS[axis]
+                for room, side in ((float(value) - lo, "-"), (hi - float(value), "+")):
+                    if best is None or room < best["room_mm"]:
+                        best = {"line": i + 1, "code": code, "axis": axis, "target": float(value),
+                                "room_mm": round(room, 3), "side": side}
+    return best
+
+
 NON_ASCII = re.compile(r"[^\x00-\x7f]")
 
 

@@ -33,5 +33,26 @@ class PrepTest(unittest.TestCase):
         self.assertEqual(prep_gcode.tag_lines(""), "G28\n\n")
 
 
+class StartMarginTest(unittest.TestCase):
+    # The stock U1 purge line (machine start G-code), the move forum topic 44046 saw refused.
+    STOCK = "T0\nG91\nG1 Y-50\nG90\nG1 Z1.5\nG0 X85 Y1 Z2 F18000\nG1 X185 E15 F360\n"
+
+    def test_stock_purge_line_leaves_one_mm_in_y(self):
+        m = prep_gcode.start_block_margin((self.STOCK + LAYER).splitlines())
+        self.assertEqual((m["line"], m["axis"], m["target"], m["room_mm"], m["side"]), (6, "Y", 1.0, 1.0, "-"))
+
+    def test_relative_moves_and_files_without_layers_are_not_guessed(self):
+        self.assertIsNone(prep_gcode.start_block_margin("G91\nG1 Y-50\n;LAYER_CHANGE\n".splitlines()))
+        self.assertIsNone(prep_gcode.start_block_margin(self.STOCK.splitlines()))
+
+    def test_summary_names_the_offset_that_is_refused(self):
+        import report
+        m = prep_gcode.start_block_margin((self.STOCK + LAYER).splitlines())
+        r = {"file": "f.gcode", "moves": 1, "tool_changes": 0, "motion_time_s": None, "tools": {},
+             "errors": [], "scars": [], "start_margin": m}
+        self.assertIn("line 6 (G0 X85 Y1 Z2 F18000) leaves 1.00 mm to the Y limit: a head with a Y offset "
+                      "below -1.00 mm is refused there if it starts the print", report.summary(r))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -76,7 +76,7 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 
 - No physics: no heating, no ooze, no flow, no real sensors. Motion time excludes heating waits.
 - Commands that wait on hardware are skipped and listed in every report: defect detection, timelapse, auto feed, flow calibration, bed mesh, chamber wait.
-- The start block before the first `;LAYER_CHANGE` is not run, because nozzle wiping and probing need sensors and nothing is on the bed yet to scar. Its motion is not checked.
+- The start block before the first `;LAYER_CHANGE` is not run, because nozzle wiping and probing need sensors and nothing is on the bed yet to scar. One thing about it is checked: the report names its explicit absolute X/Y target closest to a travel limit, and the head offset that target can take. The stock purge line `G0 X85 Y1` leaves 1.00 mm, so a head whose Y offset is below -1.00 mm stops the print right there ([forum topic 44046](https://forum.snapmaker.com/t/44046), reproduced on the real firmware in [u1-fixpack](https://github.com/DesignMaster-Solutions/u1-fixpack#start-line-refused-on-some-toolheads-forum-44046)). Compare it with your heads' `extruder_offset` in Moonraker. Moves after a macro or in relative mode are not guessed.
 - A scar is a geometric prediction, not a measurement. A soft material or a warped part changes what really happens.
 
 ## Use it in CI

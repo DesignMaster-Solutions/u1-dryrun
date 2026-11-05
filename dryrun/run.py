@@ -54,7 +54,8 @@ def main():
     rc = run_klippy(tagged, args.out)
     result = analyze.analyze(os.path.join(args.out, "trace.txt"), clearance=args.clearance,
                              line_types=analyze.line_types_from_gcode(text))
-    result.update(file=os.path.basename(args.gcode), klippy_rc=rc)
+    result.update(file=os.path.basename(args.gcode), klippy_rc=rc,
+                  start_margin=prep_gcode.start_block_margin(text.splitlines()))
     with open(os.path.join(args.out, "report.json"), "w") as f:
         json.dump(result, f, indent=2)
     with open(os.path.join(args.out, "report.html"), "w") as f:
