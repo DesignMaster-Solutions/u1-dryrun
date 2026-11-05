@@ -10,6 +10,9 @@ run() {  # file expected_exit_code
 }
 run sign-orca-2.4.0.gcode.gz 0
 run sign-orca-2.4.1.gcode.gz 1
+# The slicer fix for the same scar, built by the fork CI and sliced headless on Linux next to the official build.
+run sign-orca-2.4.1-linux.gcode.gz 1
+run sign-orca-2.4.1-patched-linux.gcode.gz 0
 run ring-orcaslicer-2.4.2.gcode.gz 0
 # A print that really scratched on a real U1 (file shared by its owner, see README): the same move must keep being flagged.
 run helado-pipewrx-orca-2.4.1.gcode.gz 1

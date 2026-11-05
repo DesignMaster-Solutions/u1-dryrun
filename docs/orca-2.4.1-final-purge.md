@@ -44,7 +44,7 @@ if (!tcr.priming && (tcr.is_finish_first || will_go_down)) {
 
 Same settings on both sign files: `z_hop = 0.4`, `z_hop_types = Auto Lift`.
 
-## Proposed fix in the slicer (not built yet)
+## Fix in the slicer
 
 ```diff
 --- a/src/libslic3r/GCode.cpp
@@ -60,6 +60,27 @@ Same settings on both sign files: `z_hop = 0.4`, `z_hop_types = Auto Lift`.
 
 `!needs_toolchange` cannot be the test: `need_toolchange(unsigned)` receives -1 as 0xFFFFFFFF and returns true.
 
+The fork builds `is_final_purge` alone (commit `bea5ad8e0` on
+[`fix/final-purge-lift`](https://github.com/DesignMaster-Solutions/OrcaSlicer/tree/fix/final-purge-lift)).
+
+### Built and sliced (5 November 2026)
+
+The Linux build of that commit ([run 41959375186](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41959375186))
+and the official 2.4.1 AppImage sliced the same sign with `tools/slice_sign_linux.sh`:
+
+| Build | Before the final purge | Final purge runs at | Dry run, firmware 2.0.0 and 2.1.0 |
+|---|---|---|---|
+| Official 2.4.1 ([G-code](../examples/sign-orca-2.4.1-linux.gcode.gz)) | `G1  X19.842 Y224.850 F30000`, no lift | Z3.05, the height of the last tower layer, printed one tool change earlier; the 2 mm retracted after the part are never pushed back | `SCAR line 38911`: 82.0 mm across the finished top layer, clearance 0.00 mm |
+| Patched ([G-code](../examples/sign-orca-2.4.1-patched-linux.gcode.gz)) | `G3 Z3.65` (spiral lift), `G1 X19.842 Y224.85 Z3.65`, `G1 Z3.25`, `G1 E2` | Z3.25, one layer up, unretracted, as 2.4.0 did | clean |
+
+`python3 tools/ab_final_purge.py examples/sign-orca-2.4.1-linux.gcode.gz examples/sign-orca-2.4.1-patched-linux.gcode.gz`
+passes: 16 tool change blocks in each file, the first 15 identical line for line. The rest of the diff is the slicing
+timestamp and 11 `M73` progress lines that moved a few lines down.
+
+The second effect explains why 2.4.1 purges on the same layer: the patched build lifts to Z3.65, which is Z3.25 plus
+the 0.4 mm `z_hop`, so the purge height was already set when the final purge started. Only a travel writes it, and the
+branch 2.4.1 skips is that travel, with the unretract after it.
+
 How a build of the fix is judged: slice the same plate with the patched build and with the same source
 without the patch, then run `python3 tools/ab_final_purge.py base.gcode patched.gcode`. It passes only if
 the base still has the bare travel into the final purge, the patched file does not, and every other tool
@@ -71,6 +92,7 @@ change block is identical line for line. The fork builds both on Linux
 
 - Why 2.4.0 stayed safe looks like this, from reading the code: there the final purge landed one layer higher
   (Z3.25 over the last object layer at Z3.05), so `finalize()` called `change_layer()`, which sets
-  `m_need_change_layer_lift_z`, and that term of the old condition produced the lifted travel. Why 2.4.1 keeps the
-  purge on the same layer was not traced.
-- The patch has not been compiled yet. Its expected G-code comes from reading the code.
+  `m_need_change_layer_lift_z`, and that term of the old condition produced the lifted travel.
+- The A/B above uses the official AppImage as the base. The same source without the patch is still building
+  ([run 41965190378](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41965190378)).
+- No one has printed with the patched build yet: a dry run cannot say what the nozzle does to the plastic.

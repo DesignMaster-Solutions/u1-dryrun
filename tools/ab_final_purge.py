@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """A/B of a slicer fix for the Orca 2.4.1 final purge scratch (Snapmaker/OrcaSlicer#1149).
 
-Usage: python3 ab_final_purge.py base.gcode patched.gcode
+Usage: python3 ab_final_purge.py base.gcode[.gz] patched.gcode[.gz]
 Slice the same model with the unpatched and the patched build, then run this. It passes (exit 0) only if
 the patched file no longer has the bare travel into the final purge and every other tool change block is
 unchanged, line for line. Exit 1 otherwise, with what differs.
 """
+import gzip
 import json
 import sys
 
@@ -50,7 +51,8 @@ def compare(base, patched):
 
 
 def read(path):
-    with open(path, encoding="utf-8", errors="surrogateescape", newline="") as f:
+    opener = gzip.open if path.endswith(".gz") else open
+    with opener(path, "rt", encoding="utf-8", errors="surrogateescape", newline="") as f:
         return f.read()
 
 

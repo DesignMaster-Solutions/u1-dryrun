@@ -1,5 +1,6 @@
 import gzip
 import os
+import re
 import sys
 import unittest
 
@@ -55,6 +56,30 @@ class AbTest(unittest.TestCase):
         verdict = ab.compare(fixed, fixed)
         self.assertFalse(verdict["ok"])
         self.assertFalse(verdict["base_bare_final_travel"])
+
+
+# The same plate sliced headless on Linux (tools/slice_sign_linux.sh): the official 2.4.1 AppImage, and the fork's
+# build of the fix (https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41959375186).
+LINUX_241, LINUX_PATCHED = "sign-orca-2.4.1-linux.gcode.gz", "sign-orca-2.4.1-patched-linux.gcode.gz"
+
+
+def final_purge_entry(text):
+    """(Z the final purge runs at, whether anything unretracts after the last object) for the last tower block."""
+    head = text[:text.rindex(ab.START)]
+    zs = re.findall(r"^G[0-3] [^;\n]*Z([0-9.]+)", head, re.M)
+    after_object = head[head.rindex("EXCLUDE_OBJECT_END"):]
+    return float(zs[-1]), bool(re.search(r"^G1 E[0-9.]+ ", after_object, re.M))
+
+
+class RealBuildTest(unittest.TestCase):
+    def test_the_patched_build_passes_against_the_official_build(self):
+        verdict = ab.compare(example(LINUX_241), example(LINUX_PATCHED))
+        self.assertTrue(verdict["ok"], verdict)
+        self.assertEqual(verdict["blocks"], [16, 16])
+
+    def test_241_purges_on_the_last_tower_layer_still_retracted_and_the_fix_does_not(self):
+        self.assertEqual(final_purge_entry(example(LINUX_241)), (3.05, False))
+        self.assertEqual(final_purge_entry(example(LINUX_PATCHED)), (3.25, True))
 
 
 if __name__ == "__main__":
