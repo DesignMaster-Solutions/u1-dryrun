@@ -57,6 +57,13 @@ Same settings on both sign files: `z_hop = 0.4`, `z_hop_types = Auto Lift`.
 
 `!needs_toolchange` cannot be the test: `need_toolchange(unsigned)` receives -1 as 0xFFFFFFFF and returns true.
 
+How a build of the fix is judged: slice the same plate with the patched build and with the same source
+without the patch, then run `python3 tools/ab_final_purge.py base.gcode patched.gcode`. It passes only if
+the base still has the bare travel into the final purge, the patched file does not, and every other tool
+change block is identical line for line. The fork builds both on Linux
+([patched](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41959375186),
+[base f5fd7289e](https://github.com/DesignMaster-Solutions/OrcaSlicer/actions/runs/41965190378)).
+
 ## Not proven
 
 - Why 2.4.0 stayed safe looks like this, from reading the code: there the final purge landed one layer higher
