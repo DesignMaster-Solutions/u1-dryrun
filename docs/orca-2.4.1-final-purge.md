@@ -5,6 +5,9 @@ The nozzle drags across the finished top layer on the last trip to the prime tow
 2.4.1 goes at print height. Line numbers below are at tag `v2.4.1` of
 [Snapmaker/OrcaSlicer](https://github.com/Snapmaker/OrcaSlicer) unless they say otherwise.
 
+**Status:** Snapmaker engineering confirmed it on 5 November 2026 and said it will be fixed in the next Snapmaker
+Orca version ([forum](https://forum.snapmaker.com/t/43865/10), [issue #1149](https://github.com/Snapmaker/OrcaSlicer/issues/1149)).
+
 **Workaround today:** [`tools/lift_final_purge.py`](../tools/lift_final_purge.py) adds a Z-hop around that one travel.
 
 ## What changed
