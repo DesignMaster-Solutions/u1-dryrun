@@ -1,0 +1,57 @@
+name: check-file
+# Issue opened from .github/ISSUE_TEMPLATE/check-a-file.yml: run the attached file, answer in the issue.
+on:
+  issues:
+    types: [opened, edited]
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: check-file-${{ github.event.issue.number }}
+  cancel-in-progress: true
+jobs:
+  check:
+    if: contains(github.event.issue.labels.*.name, 'check-file') && github.event.issue.state == 'open'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Fetch the file from the issue
+        id: fetch
+        env:
+          BODY: ${{ github.event.issue.body }}
+        run: python3 tools/issue_check.py fetch work >> "$GITHUB_OUTPUT"
+      - name: Build the firmware runner
+        if: steps.fetch.outputs.ok == 'true'
+        env:
+          REF: ${{ steps.fetch.outputs.ref }}
+        run: docker build --build-arg "U1_KLIPPER_REF=$REF" -t u1-dryrun .
+      - name: Dry run, with no network and no token
+        if: steps.fetch.outputs.ok == 'true'
+        env:
+          NAME: ${{ steps.fetch.outputs.name }}
+        run: |
+          rc=0
+          docker run --rm --network none -v "$PWD/work:/work" u1-dryrun "$NAME" > work/summary.txt 2>&1 || rc=$?
+          echo "$rc" > work/rc
+      - uses: actions/upload-artifact@v4
+        if: steps.fetch.outputs.ok == 'true'
+        with:
+          name: report
+          path: work/u1-dryrun-report/report.*
+          if-no-files-found: ignore
+      - name: Answer in the issue
+        # not on cancel: an edit restarts the check, and the cancelled run must not answer "did not finish"
+        if: (success() || failure()) && steps.fetch.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.fetch.outputs.version }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          [ -f work/rc ] || echo -1 > work/rc
+          [ -f work/summary.txt ] || echo "the run stopped before the firmware finished" > work/summary.txt
+          python3 tools/issue_check.py reply work > work/comment.md
+          gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file work/comment.md

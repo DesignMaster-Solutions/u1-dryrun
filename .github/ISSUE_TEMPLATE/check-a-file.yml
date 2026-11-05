@@ -1,0 +1,32 @@
+name: Check a sliced file
+description: Attach a sliced file and get a U1 Dry Run report in the issue. No install, no printer.
+title: "Check: "
+labels: ["check-file"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A bot runs your file through Snapmaker's real U1 firmware code (u1-klipper in batch mode) and answers in this issue in about 5 minutes: clean, a scar (a travel across a surface that is already printed), or the line where the firmware would stop the print.
+
+        GitHub does not take `.gcode` or `.3mf` attachments: zip the file first (or gzip it, or rename it to `.txt`). The file becomes public in this issue, so only attach what you can share.
+  - type: textarea
+    id: file
+    attributes:
+      label: File
+      description: Drag the zipped `.gcode` or `.gcode.3mf` here, or paste a public link to it. Up to 25 MB as an attachment, 100 MB as a link.
+    validations:
+      required: true
+  - type: dropdown
+    id: firmware
+    attributes:
+      label: Firmware
+      options:
+        - "2.1.0"
+        - "2.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: printed
+    attributes:
+      label: What happened when you printed it (optional)
+      description: If you printed it on a U1, say how it went. That is how the tool gets checked against real prints.
