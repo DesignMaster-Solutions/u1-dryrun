@@ -23,6 +23,8 @@ Exit code: `0` clean, `1` scars found, `2` the firmware rejected the file. A sel
 
 It reads files from Snapmaker Orca and from the official OrcaSlicer: real files from both are in [`examples/`](examples/) and run through the firmware on every push.
 
+Releases: https://github.com/DesignMaster-Solutions/u1-dryrun/releases (zip of the runner, the tools, the Dockerfile and the GitHub Action, to build the image from a download instead of the repository URL). Project site: https://designmaster-solutions.github.io/u1-dryrun/.
+
 ### Installing Docker
 
 - **macOS or Windows:** install Docker Desktop and start it once.
