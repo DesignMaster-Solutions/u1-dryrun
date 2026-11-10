@@ -18,10 +18,16 @@ import report  # noqa: E402
 
 KLIPPER = os.environ.get("U1_KLIPPER", "/opt/klipper")
 DICTS = os.environ.get("U1_DICTS", "/opt/dicts")
-TIMEOUT_S = int(os.environ.get("U1_TIMEOUT_S", "900"))
 
 
-def run_klippy(gcode_path, out, as_print=False, before_print=()):
+def timeout_s(n_lines):
+    """Seconds the firmware run may take before it counts as a macro waiting on hardware.
+    shortcut: 1 s per 2000 file lines, about 5x what the 8.8 million line plate from forum topic
+    43745 took on an idle laptop; measure again if a slow CI runner cuts a good file."""
+    return int(os.environ.get("U1_TIMEOUT_S") or max(900, n_lines // 2000))
+
+
+def run_klippy(gcode_path, out, as_print=False, before_print=(), timeout=900):
     """Console input by default. as_print: through the firmware's virtual_sdcard, as on the printer.
     shortcut: only --skip runs as a print, so earlier results do not move; make it the default
     once the example files give the same report both ways."""
@@ -54,7 +60,7 @@ def run_klippy(gcode_path, out, as_print=False, before_print=()):
     p = subprocess.Popen(cmd, env=env, stdin=subprocess.PIPE if as_print else subprocess.DEVNULL,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
-        return p.wait(timeout=TIMEOUT_S)
+        return p.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
         p.kill()
         p.wait()
@@ -84,11 +90,12 @@ def main():
     tagged = os.path.join(args.out, "input.gcode")
     with open(tagged, "w") as f:
         f.write(prep_gcode.tag_lines(text, maps, skips))
-    rc = run_klippy(tagged, args.out, as_print=bool(skips), before_print=prep_gcode.map_lines(maps))
+    limit = timeout_s(text.count("\n"))
+    rc = run_klippy(tagged, args.out, as_print=bool(skips), before_print=prep_gcode.map_lines(maps), timeout=limit)
     result = analyze.analyze(os.path.join(args.out, "trace.txt"), clearance=args.clearance,
                              line_types=analyze.line_types_from_gcode(text),
-                             e_only_lines=analyze.e_only_lines_from_gcode(text))
-    result.update(file=os.path.basename(args.gcode), klippy_rc=rc, unmapped_filaments=prep_gcode.unmapped_filaments(text, maps),
+                             e_only_lines=analyze.e_only_lines_from_gcode(text), cut=rc == -1)
+    result.update(file=os.path.basename(args.gcode), klippy_rc=rc, timeout_s=limit, unmapped_filaments=prep_gcode.unmapped_filaments(text, maps),
                   start_margin=prep_gcode.start_block_margin(text.splitlines()),
                   skips=[{"object": n, "line": l} for n, l in skips])
     with open(os.path.join(args.out, "report.json"), "w") as f:

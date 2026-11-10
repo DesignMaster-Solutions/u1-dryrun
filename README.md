@@ -21,6 +21,8 @@ SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05 
 
 Exit code: `0` clean, `1` scars or a dragged head found, `2` the firmware rejected the file. A self-contained `report.html` and `report.json` land in `u1-dryrun-report/`.
 
+Large plates work in a default Docker (8 GB): a 22 h 38 min farm plate shared by a U1 owner ([forum topic 43745](https://forum.snapmaker.com/t/43745/12): 223 MB, 8.8 million lines, 7,859,224 moves, 186 tool changes) runs whole in 7 minutes on a laptop. The time allowed grows with the file; a run that is still cut says `NOT FINISHED` and exits `2`, it is never reported clean (`-e U1_TIMEOUT_S=<seconds>` sets the limit by hand).
+
 It reads files from Snapmaker Orca and from the official OrcaSlicer: real files from both are in [`examples/`](examples/) and run through the firmware on every push.
 
 Releases: https://github.com/DesignMaster-Solutions/u1-dryrun/releases (zip of the runner, the tools, the Dockerfile and the GitHub Action, to build the image from a download instead of the repository URL). Project site: https://designmaster-solutions.github.io/u1-dryrun/.

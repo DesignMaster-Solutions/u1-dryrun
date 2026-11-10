@@ -123,6 +123,35 @@ class SupportTest(unittest.TestCase):
         self.assertEqual(len(result["scars"]), 1)
 
 
+class LargeFileTest(unittest.TestCase):
+    def test_memory_does_not_grow_with_the_number_of_moves(self):
+        # a 22 h farm plate is 8 million moves; held in memory they need more than the 8 GB Docker gives
+        import tracemalloc
+        path = trace((i % 200, i % 190, 0.2 + i // 20000 * 0.2, i * 0.01) for i in range(100000))
+        tracemalloc.start()
+        result = analyze.analyze(path)
+        peak = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+        self.assertEqual(result["moves"], 99999)
+        self.assertLess(peak, 20e6)
+
+
+class TimeoutTest(unittest.TestCase):
+    def test_a_run_cut_by_the_timeout_is_not_reported_clean(self):
+        import report
+        r = analyze.analyze(trace([(0, 0, 0.2, 0), (10, 0, 0.2, 1)]))
+        r.update(file="big.gcode", klippy_rc=-1, timeout_s=900)
+        text = report.summary(r)
+        self.assertIn("NOT FINISHED", text)
+        self.assertNotIn("clean", text)
+        self.assertIn("NOT FINISHED", report.render(r))
+
+    def test_timeout_grows_with_the_file(self):
+        import run
+        self.assertEqual(run.timeout_s(34368), 900)
+        self.assertGreater(run.timeout_s(8830000), 3600)
+
+
 class PrepGcodeTest(unittest.TestCase):
     def test_start_block_is_blanked_but_line_numbers_survive(self):
         import prep_gcode

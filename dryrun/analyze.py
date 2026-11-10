@@ -14,24 +14,33 @@ MIN_LENGTH = 5.0  # mm; shorter crossings are the connectors between neighbourin
 WASTE_TYPES = {"Prime tower", "Support", "Support interface", "Support transition"}
 
 
-def parse_trace(path):
-    """Return moves as dicts, with the position before and after each move."""
-    moves, prev, last_e = [], None, {}  # last_e: each head keeps its own E position
-    with open(path) as f:
-        for raw in f:
-            p = raw.split()
-            if not p or p[0] != "M":
-                continue
-            x, y, z, e = float(p[1]), float(p[2]), float(p[3]), float(p[4])
-            cur = {"x": x, "y": y, "z": z, "e": e, "v": float(p[5]),
-                   "line": int(p[6]), "tool": p[7], "t": float(p[8]),
-                   "source": "firmware" if p[9:] == ["F"] else "gcode"}
-            if prev is not None:
-                cur.update(x0=prev["x"], y0=prev["y"], z0=prev["z"], de=e - last_e.get(cur["tool"], e))
-                moves.append(cur)
-            prev = cur
-            last_e[cur["tool"]] = e
-    return moves
+class parse_trace:
+    """Moves as dicts, with the position before and after each move.
+
+    Read from disk again on every pass and never kept: a 22 h plate is 8 million moves, and as a
+    list they need more memory than the 8 GB a default Docker has.
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def __iter__(self):
+        prev, last_e = None, {}  # last_e: each head keeps its own E position
+        with open(self.path) as f:
+            for raw in f:
+                p = raw.split()
+                if not p or p[0] != "M":
+                    continue
+                x, y, z, e = float(p[1]), float(p[2]), float(p[3]), float(p[4])
+                cur = {"x": x, "y": y, "z": z, "e": e, "v": float(p[5]),
+                       "line": int(p[6]), "tool": p[7], "t": float(p[8]),
+                       "source": "firmware" if p[9:] == ["F"] else "gcode"}
+                before, prev = prev, cur
+                de = e - last_e.get(cur["tool"], e)
+                last_e[cur["tool"]] = e
+                if before is not None:
+                    cur.update(x0=before["x"], y0=before["y"], z0=before["z"], de=de)
+                    yield cur
 
 
 def cells_with_fraction(x0, y0, x1, y1, cell=CELL):
@@ -191,13 +200,14 @@ def find_drags(moves, e_only_lines):
     return drags
 
 
-def analyze(trace_path, clearance=CLEARANCE, line_types=None, e_only_lines=()):
+def analyze(trace_path, clearance=CLEARANCE, line_types=None, e_only_lines=(), cut=False):
+    """cut: the firmware run was stopped by the timeout, so the last layers are not known to be final."""
     moves = parse_trace(trace_path)
     tools, changes = tool_stats(moves)
     end, errors, skipped = read_end(trace_path)
-    scars = find_scars(moves, clearance=clearance, line_types=line_types, stopped=bool(errors))
+    scars = find_scars(moves, clearance=clearance, line_types=line_types, stopped=bool(errors) or cut)
     return {
-        "moves": len(moves),
+        "moves": sum(t["moves"] for t in tools.values()),
         "tool_changes": changes,
         "tools": tools,
         "motion_time_s": round(end, 1) if end else None,

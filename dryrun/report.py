@@ -12,6 +12,12 @@ def drag_lines(r):
             for d in r.get("drags") or []]
 
 
+def timeout_line(r):
+    if r.get("klippy_rc") == -1:
+        return ("NOT FINISHED: the firmware run was cut after %d s of computing, so the end of the file was not"
+                " checked. Give it longer: docker run -e U1_TIMEOUT_S=%d ..." % (r["timeout_s"], r["timeout_s"] * 4))
+
+
 def summary(r):
     out = ["%s: %d moves, %d tool changes" % (r["file"], r["moves"], r["tool_changes"])]
     if r["motion_time_s"] is not None:
@@ -29,6 +35,8 @@ def summary(r):
         out.append("SCAR line %d (%s, %s): %s -> %s at Z%.2f crosses %.1f mm of finished surface, clearance %.2f mm"
                    % (s["line"], s["source"], s["tool"], s["from"], s["to"], s["z"], s["length_mm"], s["clearance_mm"]))
     out += drag_lines(r)
+    if timeout_line(r):
+        out.append(timeout_line(r))
     if r.get("skipped_commands"):
         out.append("not exercised (no such hardware here): " + ", ".join(r["skipped_commands"]))
     if r.get("unmapped_filaments"):
@@ -41,7 +49,7 @@ def summary(r):
                    " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
                    % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
                       "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
-    if not r["errors"] and not r["scars"] and not r.get("drags"):
+    if not r["errors"] and not r["scars"] and not r.get("drags") and not timeout_line(r):
         out.append("clean: firmware accepted every command, no travel across a finished surface")
     return "\n".join(out)
 
@@ -60,7 +68,7 @@ def render(r):
         for s in r["scars"]
     )
     errors = "".join("<p class=err>Line %d: %s</p>" % (e["line"], html.escape(e["message"])) for e in r["errors"])
-    errors += "".join("<p class=err>%s</p>" % html.escape(d) for d in drag_lines(r))
+    errors += "".join("<p class=err>%s</p>" % html.escape(d) for d in drag_lines(r) + [timeout_line(r) or ""] if d)
     table = ("<table><tr><th>G-code line</th><th>Issued by</th><th>Tool</th><th>Z</th>"
              "<th>Length over surface (mm)</th><th>Clearance (mm)</th></tr>%s</table>" % rows) if rows else "<p>No scars.</p>"
     return """<!doctype html><meta charset=utf-8><title>u1-dryrun: %s</title>
