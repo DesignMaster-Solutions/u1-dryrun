@@ -5,6 +5,7 @@ import unittest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dryrun"))
 import analyze  # noqa: E402
+import report  # noqa: E402
 
 
 def trace(rows):
@@ -121,6 +122,42 @@ class SupportTest(unittest.TestCase):
         # the travel is tagged Support, the material under it is the part: still a scar
         result = analyze.analyze(trace(self.ROWS), line_types={1: "Outer wall", 2: "Outer wall", 3: "Support"})
         self.assertEqual(len(result["scars"]), 1)
+
+
+class DockCrossingTest(unittest.TestCase):
+    """Orca 2.4.1, forum 43745: the new head drops to layer height at its dock and crosses the part to the tower."""
+
+    def rows(self, travel_z):
+        # head 0 prints a 20 mm line at Z0.45; head 1 leaves the dock, crosses it and primes on the tower
+        return [(10, 100, 0.45, 0, "extruder"), (30, 100, 0.45, 1, "extruder"),
+                (0, 100, 5.0, 0, "extruder1"), (0, 100, travel_z, 0, "extruder1"),  # lifted to the dock, Z drop there
+                (60, 100, travel_z, 0, "extruder1"),
+                (60, 100, 0.45, 0, "extruder1"), (70, 100, 0.45, 1, "extruder1"),
+                (10, 100, 0.65, 1, "extruder1"), (30, 100, 0.65, 2, "extruder1")]  # next layer covers it: no scar
+
+    def run_rows(self, rows, types):
+        f = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False)
+        for i, (x, y, z, e, tool) in enumerate(rows):
+            f.write("M %f %f %f %f 100 %d %s %f\n" % (x, y, z, e, i, tool, i * 0.1))
+        f.close()
+        return dict(analyze.analyze(f.name, line_types=types), file="x", klippy_rc=0)
+
+    def test_new_head_crossing_the_part_at_layer_height_on_its_way_to_the_tower(self):
+        result = self.run_rows(self.rows(0.45), {6: "Prime tower"})
+        self.assertEqual(result["scars"], [])
+        self.assertEqual([c["line"] for c in result["crossings"]], [4])
+        self.assertAlmostEqual(result["crossings"][0]["length_mm"], 20.0, delta=0.5)
+        self.assertIn("CROSSING line 4", report.summary(result))
+        self.assertNotIn("clean", report.summary(result))
+
+    def test_lifted_travel_to_the_tower_is_clean(self):
+        result = self.run_rows(self.rows(0.85), {6: "Prime tower"})
+        self.assertEqual(result["crossings"], [])
+        self.assertIn("clean", report.summary(result))
+
+    def test_without_a_tower_the_first_travel_of_a_new_head_is_not_reported(self):
+        # no prime tower: travelling to the part at layer height is what every slicer does
+        self.assertEqual(self.run_rows(self.rows(0.45), {})["crossings"], [])
 
 
 class LargeFileTest(unittest.TestCase):

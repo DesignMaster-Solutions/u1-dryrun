@@ -119,6 +119,40 @@ def find_scars(moves, clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL, lin
     return scars
 
 
+def find_tower_crossings(moves, line_types, skip_lines=(), clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL):
+    """Travels of a newly picked head that cross the part at layer height before it primes on the tower.
+
+    The next layers bury the mark, so find_scars stays silent, but the head has just gone through
+    what it printed with a nozzle that has not been wiped yet (Snapmaker/OrcaSlicer#1168).
+    Only counted when the head's first extrusion is the prime tower: without a tower, going
+    straight to the part at layer height is what every slicer does.
+    """
+    now, found, pending, last = {}, [], None, None
+    for m in moves:
+        if last is not None and m["tool"] != last:
+            pending = []
+        last = m["tool"]
+        if is_extrusion(m):
+            if line_types.get(m["line"]) in WASTE_TYPES:
+                if pending and m["source"] == "gcode" and line_types.get(m["line"]) == "Prime tower":
+                    found += pending
+            else:
+                for c in cells_on_segment(m["x0"], m["y0"], m["x"], m["y"], cell):
+                    now[c] = max(now.get(c, 0.0), max(m["z0"], m["z"]))
+            if m["source"] == "gcode":  # a firmware wipe during the tool change is not the head's first print move
+                pending = None
+            continue
+        if pending is None or m["line"] in skip_lines:
+            continue
+        hit = sum(1 for c, s in cells_with_fraction(m["x0"], m["y0"], m["x"], m["y"], cell)
+                  if c in now and m["z0"] + (m["z"] - m["z0"]) * s - now[c] < clearance)
+        if hit * cell >= min_length:
+            pending.append({"line": m["line"], "tool": m["tool"], "z": round(m["z"], 3), "source": m["source"],
+                            "from": [round(m["x0"], 2), round(m["y0"], 2)],
+                            "to": [round(m["x"], 2), round(m["y"], 2)], "length_mm": round(hit * cell, 1)})
+    return found
+
+
 def read_end(path):
     """Klipper's own end-of-print time, firmware errors and the commands stubbed out."""
     end, errors, skipped = None, [], []
@@ -216,6 +250,7 @@ def analyze(trace_path, clearance=CLEARANCE, line_types=None, e_only_lines=(), c
         "skipped_commands": skipped,
         "footprint": footprint(moves, line_types),
         "scars": scars,
+        "crossings": find_tower_crossings(moves, line_types or {}, skip_lines={s["line"] for s in scars}),
         "drags": find_drags(moves, e_only_lines),
     }
 

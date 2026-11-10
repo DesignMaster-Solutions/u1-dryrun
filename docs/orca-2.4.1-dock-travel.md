@@ -2,13 +2,15 @@
 
 File: a U1 owner's plate shared on the forum (https://forum.snapmaker.com/t/43745/12), Snapmaker Orca 2.4.1, sliced 2026-10-31, 27 objects, 229 layers, 187 tool changes, prime tower at X230.853 Y219.095 (right back corner), `wipe_tower_wall_gap = 1` (the default).
 
-Run: the whole file through the U1 firmware 2.1.0 (Klipper exited normally at 72284 s of print time), then `tools/tower_travels.py` on the trace. The standard report is clean because these crossings are covered by the next layers; this script counts any material printed so far.
+Run: the whole file through the U1 firmware 2.1.0 (Klipper exited normally at 72284 s of print time), then `tools/tower_travels.py` on the trace. When this was written the standard report was clean, because these crossings are covered by the next layers; this script counts any material printed so far.
 
 ## What happens
 
 - 94 of the 187 tool changes enter the tower on its right side (X262.665). In all 94 the slicer writes `G1 Z<layer> F30000` right after `T<n>`, before any XY move. The firmware has just left the new head at its dock exit (X43.5, X94.2 or X161.7, Y250), so the Z drop happens there, and the tower block's first move (`G1  X262.665 Y...`) crosses the plate at the height of the layer just printed.
 - 92 enter on the left (X236.165). There the slicer first writes the "return to wipe tower" detour (`G1 X227.96 Y237.607`, `G1 X236.165 Y237.607`) at the lifted height and only then lowers Z at the tower.
-- 74 of the 94 cross 24 to 133 mm of part at 0.00 mm, from Z0.45 to Z42.85 (head 0: 33, head 1: 23, head 2: 18). Full list below. Line 8829545 (the final purge, #1149, the 187th) is a separate move.
+- 74 of the 94 pass over 24 to 133 mm of part with the nozzle at the height of the layer in progress, from Z0.45 to Z42.85 (head 0: 33, head 1: 23, head 2: 18), and each touches it (0.00 mm) somewhere. Full list below; "over" in it is the whole length above the part, not the length in contact.
+- In 52 of the 74 the contact at 0.00 mm is 5.0 to 40.5 mm long (head 0: 16, head 1: 23, head 2: 13): where the path runs over what the current layer has already printed. Since 10 November 2026 the standard report lists these as `CROSSING line N` and exits 1. In the other 22 the contact is shorter than 5 mm; the rest of every path is over earlier layers, below the nozzle.
+- Corrected 10 November 2026: this page first said "74 cross 24 to 133 mm of part at 0.00 mm". 24 to 133 mm is the length over the part; the length in contact is the line above. Line 8829545 (the final purge, #1149, the 187th) is a separate move.
 
 ## Why (Snapmaker/OrcaSlicer v2.4.1, src/libslic3r/GCode.cpp, WipeTowerIntegration::append_tcr)
 

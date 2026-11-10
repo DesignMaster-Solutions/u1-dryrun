@@ -5,7 +5,7 @@ cd "$(dirname "$0")/../examples" || exit 2
 run() {  # file expected_exit_code
   out=$(docker run --rm -v "$PWD:/work" "$image" "$1" --out "/tmp/$1")
   rc=$?
-  echo "$out" | grep -E "moves|SCAR|ERROR|clean"
+  echo "$out" | grep -E "moves|SCAR|CROSSING|ERROR|clean"
   if [ "$rc" != "$2" ]; then echo "FAIL $1: exit $rc, expected $2"; exit 1; fi
 }
 run sign-orca-2.4.0.gcode.gz 0

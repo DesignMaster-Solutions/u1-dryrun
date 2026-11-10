@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """u1-dryrun: run a sliced G-code through Snapmaker's real U1 Klipper, without a printer.
 
-Exit code: 0 clean, 1 surface scars or a dragged head found, 2 the firmware rejected the file.
+Exit code: 0 clean, 1 surface scars, a dragged head or a head crossing the part on its way to the tower found, 2 the firmware rejected the file.
 """
 import argparse
 import json
@@ -105,7 +105,7 @@ def main():
     print(report.summary(result))
     if result["errors"] or rc != 0:
         return 2
-    return 1 if result["scars"] or result["drags"] else 0
+    return 1 if result["scars"] or result["drags"] or result["crossings"] else 0
 
 
 if __name__ == "__main__":
