@@ -71,6 +71,18 @@ class ScarTest(unittest.TestCase):
                 (30, 10, 5.2, 1), (10, 10, 5.2, 2)]  # layer 2 buries the mark
         self.assertEqual(analyze.analyze(trace(rows))["scars"], [])
 
+    def test_print_stopped_by_the_firmware_does_not_scar_its_last_two_layers(self):
+        # Real file from u1-klipper#22 with two objects skipped: the firmware stops the print at
+        # line 319758 and the 4 "scars" were same-layer travels the next layer would have buried.
+        rows = [(10, 30, 4.6, 0), (30, 30, 4.6, 1), (10, 30, 4.6, 1),  # a top surface, two layers down
+                (10, 10, 5.0, 1), (30, 10, 5.0, 2), (10, 10, 5.0, 2),  # travel over the layer below the last
+                (10, 50, 5.2, 2), (30, 50, 5.2, 3)]  # the layer in progress when the print stops
+        path = trace(rows)
+        self.assertEqual(len(analyze.analyze(path)["scars"]), 2)  # ran to the end: both are final
+        with open(path, "a") as f:
+            f.write("ERR 7 Move out of range\n")
+        self.assertEqual([s["z"] for s in analyze.analyze(path)["scars"]], [4.6])
+
     def test_counts_tool_changes(self):
         f = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False)
         for i, tool in enumerate(["extruder", "extruder", "extruder1", "extruder"]):

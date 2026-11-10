@@ -23,6 +23,8 @@ def summary(r):
         out.append("what if: object %s skipped at line %d; the file ran as a print" % (k["object"], k["line"]))
     for e in r["errors"]:
         out.append("FIRMWARE ERROR near line %d: %s" % (e["line"], e["message"]))
+    if r["errors"]:
+        out.append("the print stops there: the layer in progress and the one below it are not checked for scars")
     for s in r["scars"]:
         out.append("SCAR line %d (%s, %s): %s -> %s at Z%.2f crosses %.1f mm of finished surface, clearance %.2f mm"
                    % (s["line"], s["source"], s["tool"], s["from"], s["to"], s["z"], s["length_mm"], s["clearance_mm"]))

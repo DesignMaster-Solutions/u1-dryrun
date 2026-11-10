@@ -65,7 +65,11 @@ def line_types_from_gcode(text):
     return types
 
 
-def find_scars(moves, clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL, line_types=None):
+def find_scars(moves, clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL, line_types=None, stopped=False):
+    """stopped: the print ended on a firmware error, so the layers that would have buried the last
+    material never ran. The layer in progress and the one below it are then not known to be final.
+    shortcut: layers are told apart by distinct extrusion Z, so a spiral-vase file that stops
+    mid-way only loses its last 0.02 mm; use the slicer layer markers if that ever matters."""
     line_types = line_types or {}
     waste = lambda m: line_types.get(m["line"]) in WASTE_TYPES  # noqa: E731
     final = {}
@@ -73,6 +77,9 @@ def find_scars(moves, clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL, lin
         if is_extrusion(m) and not waste(m):
             for c in cells_on_segment(m["x0"], m["y0"], m["x"], m["y"], cell):
                 final[c] = max(final.get(c, 0.0), max(m["z0"], m["z"]))
+    unknown_from = None
+    if stopped and final:
+        unknown_from = sorted({round(h, 2) for h in final.values()})[-2:][0]
     now, scars = {}, []
     for m in moves:
         if is_extrusion(m):
@@ -86,7 +93,7 @@ def find_scars(moves, clearance=CLEARANCE, min_length=MIN_LENGTH, cell=CELL, lin
         for c, s in cells_with_fraction(m["x0"], m["y0"], m["x"], m["y"], cell):
             h = now.get(c)
             # finished = this cell already reached its final height, so a mark stays visible
-            if h is None or h < final[c] - 1e-6:
+            if h is None or h < final[c] - 1e-6 or (unknown_from is not None and h > unknown_from - 0.005):
                 continue
             gap = m["z0"] + (m["z"] - m["z0"]) * s - h  # Z moves with XY on a ramped lift
             if gap < clearance:
@@ -187,8 +194,8 @@ def find_drags(moves, e_only_lines):
 def analyze(trace_path, clearance=CLEARANCE, line_types=None, e_only_lines=()):
     moves = parse_trace(trace_path)
     tools, changes = tool_stats(moves)
-    scars = find_scars(moves, clearance=clearance, line_types=line_types)
     end, errors, skipped = read_end(trace_path)
+    scars = find_scars(moves, clearance=clearance, line_types=line_types, stopped=bool(errors))
     return {
         "moves": len(moves),
         "tool_changes": changes,
