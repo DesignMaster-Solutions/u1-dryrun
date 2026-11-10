@@ -112,6 +112,10 @@ def parse_skips(specs, text):
     return skips
 
 
+def map_lines(maps):
+    return ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=%d MAP_EXTRUDER=%d" % m for m in maps]
+
+
 def tag_lines(text, maps=(), skips=()):
     lines, _ = strip_start_block(text.splitlines())
     out = []
@@ -122,7 +126,9 @@ def tag_lines(text, maps=(), skips=()):
     # Homed from the start, whatever the slicer's start block does or whether it is found.
     # Klipper's batch reader decodes each 4096-byte read on its own and silently drops one that
     # cuts a UTF-8 character (the U1 start G-code has Chinese comments). ASCII cannot be cut.
-    head = ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=%d MAP_EXTRUDER=%d" % m for m in maps] + ["G28"]
+    # As a print (--skip) the firmware refuses the map once the print has started: run.py sends
+    # it before the print instead, as the screen does.
+    head = ([] if skips else map_lines(maps)) + ["G28"]
     return NON_ASCII.sub("_", "\n".join(head + ["\n".join(out)])) + "\n"
 
 

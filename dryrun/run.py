@@ -21,7 +21,7 @@ DICTS = os.environ.get("U1_DICTS", "/opt/dicts")
 TIMEOUT_S = int(os.environ.get("U1_TIMEOUT_S", "900"))
 
 
-def run_klippy(gcode_path, out, as_print=False):
+def run_klippy(gcode_path, out, as_print=False, before_print=()):
     """Console input by default. as_print: through the firmware's virtual_sdcard, as on the printer.
     shortcut: only --skip runs as a print, so earlier results do not move; make it the default
     once the example files give the same report both ways."""
@@ -43,6 +43,7 @@ def run_klippy(gcode_path, out, as_print=False):
                 "min_x": 3.0, "max_x": 267.0, "min_y": 3.0, "max_y": 267.0, "x_count": 13, "y_count": 13,
                 "mesh_x_pps": 2, "mesh_y_pps": 2, "algo": "bicubic", "tension": 0.2}}}, f)
         env["DRYRUN_PRINT"] = os.path.basename(gcode_path)
+        env["DRYRUN_BEFORE_PRINT"] = "\n".join(before_print)
     board, tool = "at32f403a_config.dict", "at32f415_config.dict"
     cmd = ["python3", os.path.join(KLIPPER, "klippy/klippy.py"), os.path.join(cfg, "printer.cfg"),
            "-i", "/dev/stdin" if as_print else gcode_path, "-o", os.path.join(out, "mcu.out"), "-v",
@@ -83,7 +84,7 @@ def main():
     tagged = os.path.join(args.out, "input.gcode")
     with open(tagged, "w") as f:
         f.write(prep_gcode.tag_lines(text, maps, skips))
-    rc = run_klippy(tagged, args.out, as_print=bool(skips))
+    rc = run_klippy(tagged, args.out, as_print=bool(skips), before_print=prep_gcode.map_lines(maps))
     result = analyze.analyze(os.path.join(args.out, "trace.txt"), clearance=args.clearance,
                              line_types=analyze.line_types_from_gcode(text),
                              e_only_lines=analyze.e_only_lines_from_gcode(text))

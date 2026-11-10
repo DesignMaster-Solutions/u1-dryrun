@@ -36,7 +36,9 @@ class DryrunUI:
             self.requested = True
             gcode = self.printer.lookup_object("gcode")
             self.reactor.register_callback(lambda e: gcode.run_script(
-                "SDCARD_PRINT_FILE FILENAME=%s" % os.environ["DRYRUN_PRINT"]))
+                # --map goes first: the firmware refuses it once the print has started
+                os.environ.get("DRYRUN_BEFORE_PRINT", "") + "\nSDCARD_PRINT_FILE FILENAME=%s"
+                % os.environ["DRYRUN_PRINT"]))
         # batch mode never waits on the MCU, so a whole print can run between two polls
         elif self.print_stats.state in ("complete", "cancelled", "error"):
             self.printer.request_exit("exit")

@@ -16,7 +16,7 @@ WASTE_TYPES = {"Prime tower", "Support", "Support interface", "Support transitio
 
 def parse_trace(path):
     """Return moves as dicts, with the position before and after each move."""
-    moves, prev = [], None
+    moves, prev, last_e = [], None, {}  # last_e: each head keeps its own E position
     with open(path) as f:
         for raw in f:
             p = raw.split()
@@ -27,9 +27,10 @@ def parse_trace(path):
                    "line": int(p[6]), "tool": p[7], "t": float(p[8]),
                    "source": "firmware" if p[9:] == ["F"] else "gcode"}
             if prev is not None:
-                cur.update(x0=prev["x"], y0=prev["y"], z0=prev["z"], de=e - prev["e"])
+                cur.update(x0=prev["x"], y0=prev["y"], z0=prev["z"], de=e - last_e.get(cur["tool"], e))
                 moves.append(cur)
             prev = cur
+            last_e[cur["tool"]] = e
     return moves
 
 
@@ -134,8 +135,7 @@ def tool_stats(moves):
     for m in moves:
         s = stats.setdefault(m["tool"], {"extruded_mm": 0.0, "moves": 0})
         s["moves"] += 1
-        if m["de"] > 0:
-            s["extruded_mm"] += m["de"]
+        s["extruded_mm"] += m["de"]  # net: a retract and its restore use no filament
         if last is not None and m["tool"] != last:
             changes += 1
         last = m["tool"]

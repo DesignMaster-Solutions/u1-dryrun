@@ -13,9 +13,9 @@ $ docker build -t u1-dryrun https://github.com/DesignMaster-Solutions/u1-dryrun.
 $ docker run --rm -v "$PWD:/work" u1-dryrun my-print.gcode.3mf
 
 sign-orca-2.4.1.gcode.gz: 34368 moves, 15 tool changes
-motion time 7120 s (no heating), about 53 s of it firmware tool-change motion
-  extruder: 91571 mm of filament
-  extruder1: 5620 mm of filament
+motion time 7120 s (no heating), about 48 s of it firmware tool-change motion
+  extruder: 27244 mm of filament
+  extruder1: 5436 mm of filament
 SCAR line 38910 (gcode, extruder1): [65.52, 143.71] -> [19.84, 224.85] at Z3.05 crosses 82.0 mm of finished surface, clearance 0.00 mm
 ```
 
@@ -61,7 +61,7 @@ As a fidelity check, the firmware's own motion time lands next to the slicer's e
 - **Firmware errors.** Anything Klipper would stop on, such as `Move out of range`, a macro error or a bad parameter, with the G-code line. This uses the real limits from Snapmaker's config.
 - **Surface scars.** A non-extruding move that crosses printed material with the nozzle within 0.05 mm of it (`--clearance`), for 5 mm or more, where that material is never covered later. Moves are read after the firmware processed them, so tool-change motion issued by the firmware counts too, and ramped lifts are followed along their slope. Prime tower and support material are ignored, because nobody keeps them; a travel that crosses the part itself while the slicer is printing support still counts. On the real file from [u1-klipper#22](https://github.com/Snapmaker/u1-klipper/issues/22) this removed three first-layer findings that were all travels over support.
 - **Tool use.** Tool changes, filament per tool, and how much motion time the firmware's tool changes add.
-- **What if I skip an object?** `--skip OBJECT@LINE` (repeatable) presses "Skip" on that object when the print reaches that line of the file, and runs the file as a real print through the firmware's own `virtual_sdcard`. On stock 2.0.0 and 2.1.0 the next filament-only move after a tool change can carry the skipped object's XY ([u1-klipper#22](https://github.com/Snapmaker/u1-klipper/issues/22)): the report shows it as `DRAG line N`, with where the head went and how much filament it pushed on the way, or as a firmware error if the target is off the bed. Try it: `examples/skip-then-toolchange.gcode` is clean, and with `--skip B@80` the chute prime at line 205 drags the head 70.7 mm across the bed. Object names are the file's `EXCLUDE_OBJECT_DEFINE NAME=` values; a wrong name lists them.
+- **What if I skip an object?** `--skip OBJECT@LINE` (repeatable) presses "Skip" on that object when the print reaches that line of the file, and runs the file as a real print through the firmware's own `virtual_sdcard`. On stock 2.0.0 and 2.1.0 the next filament-only move after a tool change can carry the skipped object's XY ([u1-klipper#22](https://github.com/Snapmaker/u1-klipper/issues/22)): the report shows it as `DRAG line N`, with where the head went and how much filament it pushed on the way, or as a firmware error if the target is off the bed. Try it: `examples/skip-then-toolchange.gcode` is clean, and with `--skip B@80` the chute prime at line 205 drags the head 70.7 mm across the bed. Object names are the file's `EXCLUDE_OBJECT_DEFINE NAME=` values; a wrong name lists them. Checked against a real print: on the file from the #22 report (stock 2.0.0, two objects skipped near line 311388, `--map T4=T3`) the Dry Run stops at line 319758 with `Move out of range on Y axis: 81.489 337.635 10.850`, the line and the Y the printer logged.
 - **Files with more than four filaments.** The slicer numbers them T0 to T31 and the screen assigns each one to a head when the print starts. The file does not carry that choice, so pass it: `--map T4=T3` (repeatable) sends it to the firmware with its own `SET_PRINT_EXTRUDER_MAP`. Without it the firmware default applies (every filament above T3 on head 0) and the report says which filaments that was. Found on 9 November 2026 on a real file printed on a stock U1 with T1 and T4 ([u1-klipper#22](https://github.com/Snapmaker/u1-klipper/issues/22)): unmapped, the 3,686 mm of T4 were simulated on head 0; with `--map T4=T3` they are on `extruder3`, the head that printed them.
 
 ## How it works

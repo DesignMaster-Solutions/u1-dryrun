@@ -34,6 +34,21 @@ class DragTest(unittest.TestCase):
                          [(2, [92.7, 300.5], [82.7, 230.5], 70.7, 20.0)])
 
 
+class FilamentTest(unittest.TestCase):
+    def test_each_head_counts_its_own_net_filament(self):
+        # Each head keeps its own E position, so the first move after a tool change is not a push
+        # of the difference between the two (a real 4 h file reported 1116 m for 23 m), and a
+        # retract followed by its restore is no filament used.
+        f = tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False)
+        for i, (tool, e) in enumerate([("extruder", 0), ("extruder", 100), ("extruder1", 5), ("extruder1", 15),
+                                       ("extruder", 100), ("extruder", 99), ("extruder", 100), ("extruder", 110)]):
+            f.write("M %d 10 0.2 %f 100 %d %s %f G\n" % (i, e, i, tool, i * 0.1))
+        f.close()
+        tools, changes = analyze.tool_stats(analyze.parse_trace(f.name))
+        self.assertEqual({t: s["extruded_mm"] for t, s in tools.items()}, {"extruder": 110.0, "extruder1": 10.0})
+        self.assertEqual(changes, 2)
+
+
 class ScarTest(unittest.TestCase):
     def square_top(self, z):
         """Top layer: a 20 mm line printed back and forth, fully covering y=10."""

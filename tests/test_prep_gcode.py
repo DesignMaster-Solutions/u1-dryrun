@@ -39,6 +39,12 @@ class MapTest(unittest.TestCase):
         self.assertEqual(out[:3], ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=4 MAP_EXTRUDER=3",
                                    "SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=5 MAP_EXTRUDER=1", "G28"])
 
+    def test_map_stays_out_of_the_file_when_it_runs_as_a_print(self):
+        # in the file, the firmware answers "not allowed to set extruder map during printing"
+        out = prep_gcode.tag_lines(LAYER, [(4, 3)], [("A", 3)])
+        self.assertNotIn("SET_PRINT_EXTRUDER_MAP", out)
+        self.assertEqual(prep_gcode.map_lines([(4, 3)]), ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=4 MAP_EXTRUDER=3"])
+
     def test_bad_map_is_refused_not_ignored(self):
         for spec in ("T4", "T4=T4", "x=1", "T4=T3,T5=T1"):
             self.assertRaises(ValueError, prep_gcode.parse_maps, [spec])
