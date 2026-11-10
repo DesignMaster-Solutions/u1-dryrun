@@ -18,6 +18,13 @@ run ring-orcaslicer-2.4.2.gcode.gz 0
 run helado-pipewrx-orca-2.4.1.gcode.gz 1
 echo "$out" | grep -q 'SCAR line 130731 ' || { echo "FAIL helado: the scar at line 130731 moved or vanished"; exit 1; }
 run out-of-range.gcode 2
+# What if I skip an object mid-print? Clean without the skip; with it the stock firmware (2.0.0 and
+# 2.1.0, Snapmaker/u1-klipper#22) drags the head 70 mm across the bed on the E-only chute prime.
+run skip-then-toolchange.gcode 0
+out=$(docker run --rm -v "$PWD:/work" "$image" skip-then-toolchange.gcode --out /tmp/skip --skip B@80); rc=$?
+echo "$out" | grep -E "what if|DRAG"
+[ "$rc" = 1 ] && echo "$out" | grep -q 'DRAG line 205 (extruder1): .* 70.7 mm, \[92.7, 300.5\] -> \[82.7, 230.5\]' \
+  || { echo "FAIL --skip B@80: exit $rc, expected 1 with the drag at line 205"; exit 1; }
 # The workaround on the same files: the scar must be gone, on the real firmware.
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 for f in helado-pipewrx-orca-2.4.1 sign-orca-2.4.1; do

@@ -154,7 +154,37 @@ def footprint(moves, line_types=None, cell=2.0):
     return sorted(cells)
 
 
-def analyze(trace_path, clearance=CLEARANCE, line_types=None):
+def e_only_lines_from_gcode(text):
+    """Line numbers of G0/G1 lines that name E and neither X nor Y: filament only, head still."""
+    out = set()
+    for number, line in enumerate(text.splitlines(), 1):
+        words = line.split(";", 1)[0].upper().split()
+        if words and words[0] in ("G0", "G1") and any(w[0] == "E" for w in words[1:]) \
+                and not any(w[0] in "XY" for w in words[1:]):
+            out.add(number)
+    return out
+
+
+def find_drags(moves, e_only_lines):
+    """E-only lines on which the firmware moved the head in XY anyway.
+
+    The file asks for filament with the head still (a prime in the purge chute, an unretract);
+    after "Skip object" the U1 adds the skipped object's XY to it (Snapmaker/u1-klipper#22), so
+    the head crosses the bed while extruding, or the target is out of range and the print stops.
+    """
+    drags = []
+    for m in moves:
+        length = math.hypot(m["x"] - m["x0"], m["y"] - m["y0"])
+        # shortcut: moves a macro issues after an E-only line carry that line number too, so only a
+        # move that pushes filament counts; tag macro moves in the tracer if one ever extrudes in XY.
+        if m["source"] == "gcode" and m["line"] in e_only_lines and length > 0.01 and m["de"] > 1e-6:
+            drags.append({"line": m["line"], "tool": m["tool"], "from": [round(m["x0"], 2), round(m["y0"], 2)],
+                          "to": [round(m["x"], 2), round(m["y"], 2)], "z": round(m["z"], 3),
+                          "length_mm": round(length, 1), "extruded_mm": round(m["de"], 2)})
+    return drags
+
+
+def analyze(trace_path, clearance=CLEARANCE, line_types=None, e_only_lines=()):
     moves = parse_trace(trace_path)
     tools, changes = tool_stats(moves)
     scars = find_scars(moves, clearance=clearance, line_types=line_types)
@@ -169,6 +199,7 @@ def analyze(trace_path, clearance=CLEARANCE, line_types=None):
         "skipped_commands": skipped,
         "footprint": footprint(moves, line_types),
         "scars": scars,
+        "drags": find_drags(moves, e_only_lines),
     }
 
 

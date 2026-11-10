@@ -96,11 +96,29 @@ def unmapped_filaments(text, maps=()):
     return sorted(t for t in used if t > 3 and t not in {f for f, _ in maps})
 
 
-def tag_lines(text, maps=()):
+def parse_skips(specs, text):
+    """["NAME@LINE", ...] -> [(name, line)]: the object the user skips on the screen, and the
+    file line the print is at when they press it. The name must be one the file defines."""
+    defined = set(re.findall(r"^EXCLUDE_OBJECT_DEFINE\b.*?\bNAME=(\S+)", text, re.M))
+    n_lines, skips = len(text.splitlines()), []
+    for spec in specs or []:
+        name, _, line = spec.rpartition("@")
+        if not name or not line.isdigit() or not 1 <= int(line) <= n_lines:
+            raise ValueError("--skip wants OBJECT@LINE with a line of this file (1-%d), got %r" % (n_lines, spec))
+        if name not in defined:
+            raise ValueError("--skip %s: the file defines no such object; it has: %s"
+                             % (name, ", ".join(sorted(defined)) or "none (objects not labelled)"))
+        skips.append((name, int(line)))
+    return skips
+
+
+def tag_lines(text, maps=(), skips=()):
     lines, _ = strip_start_block(text.splitlines())
     out = []
     for i, line in enumerate(lines, 1):
         out.append("%s ;L%d" % (line, i) if MOVE.match(line) else line)
+    for name, at in skips:  # before that line, as one entry: line numbers stay the file's own
+        out[at - 1] = "DRYRUN_LINE N=%d\nEXCLUDE_OBJECT NAME=%s\n%s" % (at, name, out[at - 1])
     # Homed from the start, whatever the slicer's start block does or whether it is found.
     # Klipper's batch reader decodes each 4096-byte read on its own and silently drops one that
     # cuts a UTF-8 character (the U1 start G-code has Chinese comments). ASCII cannot be cut.

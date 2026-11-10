@@ -16,6 +16,24 @@ def trace(rows):
     return f.name
 
 
+class DragTest(unittest.TestCase):
+    GCODE = "G1 X45 Y300\nG1 E20 F360 ; prime\nG1 Z2 E1\nG1 X50 E1\n"
+
+    def test_e_only_lines_are_the_ones_without_x_or_y(self):
+        self.assertEqual(analyze.e_only_lines_from_gcode(self.GCODE), {2, 3})
+
+    def test_head_moved_on_an_e_only_line_is_a_drag_and_a_still_prime_is_not(self):
+        # tracer rows are numbered from 0: row 2 is the prime of file line 2
+        still = analyze.analyze(trace([(0, 0, 2, 0), (45, 300, 2, 0), (45, 300, 2, 20)]), e_only_lines={2})
+        self.assertEqual(still["drags"], [])
+        # a travel issued by a macro right after the retract of line 2 (sign-orca-2.4.0, end G-code)
+        macro = analyze.analyze(trace([(0, 0, 2, 0), (45, 300, 2, 0), (5, 5, 2, 0)]), e_only_lines={2})
+        self.assertEqual(macro["drags"], [])
+        moved = analyze.analyze(trace([(0, 0, 2, 0), (92.7, 300.5, 2, 0), (82.7, 230.5, 2, 20)]), e_only_lines={2})
+        self.assertEqual([(d["line"], d["from"], d["to"], d["length_mm"], d["extruded_mm"]) for d in moved["drags"]],
+                         [(2, [92.7, 300.5], [82.7, 230.5], 70.7, 20.0)])
+
+
 class ScarTest(unittest.TestCase):
     def square_top(self, z):
         """Top layer: a 20 mm line printed back and forth, fully covering y=10."""

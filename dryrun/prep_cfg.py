@@ -25,12 +25,17 @@ def strip_sections(text, remove=REMOVE):
     return "\n".join(out) + "\n"
 
 
-def main(src_dir, dst_dir):
+# A real print needs klippy "ready"; power_loss_check's ready handler queries the MCU, which never
+# answers in batch mode, so the handlers after it would never run.
+REMOVE_FOR_PRINT = re.compile(REMOVE.pattern[:-2] + r"|power_loss_check( .*)?)$")
+
+
+def main(src_dir, dst_dir, remove=REMOVE):
     os.makedirs(dst_dir, exist_ok=True)
     for name in os.listdir(src_dir):
         if name.endswith(".cfg"):
             with open(os.path.join(src_dir, name)) as f:
-                text = strip_sections(f.read())
+                text = strip_sections(f.read(), remove)
             with open(os.path.join(dst_dir, name), "w") as f:
                 f.write(text)
     with open(os.path.join(dst_dir, "printer.cfg")) as f:

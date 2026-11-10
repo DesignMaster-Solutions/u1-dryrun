@@ -4,6 +4,14 @@ import html
 BED = 270
 
 
+def drag_lines(r):
+    return ["DRAG line %d (%s): the file asks for filament only, the firmware moved the head %.1f mm, %s -> %s"
+            " at Z%.2f, while pushing %.1f mm of filament%s"
+            % (d["line"], d["tool"], d["length_mm"], d["from"], d["to"], d["z"], d["extruded_mm"],
+               " (skipped-object offset, Snapmaker/u1-klipper#22)" if r.get("skips") else "")
+            for d in r.get("drags") or []]
+
+
 def summary(r):
     out = ["%s: %d moves, %d tool changes" % (r["file"], r["moves"], r["tool_changes"])]
     if r["motion_time_s"] is not None:
@@ -11,11 +19,14 @@ def summary(r):
                    % (r["motion_time_s"], r["firmware_motion_s"]))
     for name, t in sorted(r["tools"].items()):
         out.append("  %s: %.0f mm of filament" % (name, t["extruded_mm"]))
+    for k in r.get("skips") or []:
+        out.append("what if: object %s skipped at line %d; the file ran as a print" % (k["object"], k["line"]))
     for e in r["errors"]:
         out.append("FIRMWARE ERROR near line %d: %s" % (e["line"], e["message"]))
     for s in r["scars"]:
         out.append("SCAR line %d (%s, %s): %s -> %s at Z%.2f crosses %.1f mm of finished surface, clearance %.2f mm"
                    % (s["line"], s["source"], s["tool"], s["from"], s["to"], s["z"], s["length_mm"], s["clearance_mm"]))
+    out += drag_lines(r)
     if r.get("skipped_commands"):
         out.append("not exercised (no such hardware here): " + ", ".join(r["skipped_commands"]))
     if r.get("unmapped_filaments"):
@@ -28,7 +39,7 @@ def summary(r):
                    " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
                    % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
                       "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
-    if not r["errors"] and not r["scars"]:
+    if not r["errors"] and not r["scars"] and not r.get("drags"):
         out.append("clean: firmware accepted every command, no travel across a finished surface")
     return "\n".join(out)
 
@@ -47,6 +58,7 @@ def render(r):
         for s in r["scars"]
     )
     errors = "".join("<p class=err>Line %d: %s</p>" % (e["line"], html.escape(e["message"])) for e in r["errors"])
+    errors += "".join("<p class=err>%s</p>" % html.escape(d) for d in drag_lines(r))
     table = ("<table><tr><th>G-code line</th><th>Issued by</th><th>Tool</th><th>Z</th>"
              "<th>Length over surface (mm)</th><th>Clearance (mm)</th></tr>%s</table>" % rows) if rows else "<p>No scars.</p>"
     return """<!doctype html><meta charset=utf-8><title>u1-dryrun: %s</title>

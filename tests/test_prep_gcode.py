@@ -74,5 +74,23 @@ class StartMarginTest(unittest.TestCase):
                       "below -1.00 mm is refused there if it starts the print", report.summary(r))
 
 
+class SkipTest(unittest.TestCase):
+    FILE = "EXCLUDE_OBJECT_DEFINE NAME=part_1.stl_id_0 CENTER=1,1\n" + LAYER + "G1 X1 Y1\nG1 X2 Y2\n"
+
+    def test_skip_goes_before_its_line_and_line_tags_stay(self):
+        n = len(self.FILE.splitlines())
+        skips = prep_gcode.parse_skips(["part_1.stl_id_0@%d" % n], self.FILE)
+        out = prep_gcode.tag_lines(self.FILE, skips=skips).splitlines()
+        i = out.index("EXCLUDE_OBJECT NAME=part_1.stl_id_0")
+        self.assertEqual((out[i - 1], out[i + 1]), ("DRYRUN_LINE N=%d" % n, "G1 X2 Y2 ;L%d" % n))
+
+    def test_unknown_object_or_line_is_refused_with_the_names_the_file_has(self):
+        with self.assertRaisesRegex(ValueError, "it has: part_1.stl_id_0"):
+            prep_gcode.parse_skips(["B@2"], self.FILE)
+        for bad in ("part_1.stl_id_0", "part_1.stl_id_0@0", "part_1.stl_id_0@999", "@3"):
+            with self.assertRaises(ValueError):
+                prep_gcode.parse_skips([bad], self.FILE)
+
+
 if __name__ == "__main__":
     unittest.main()
