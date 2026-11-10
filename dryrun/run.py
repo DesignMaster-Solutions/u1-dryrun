@@ -45,16 +45,23 @@ def main():
     ap.add_argument("--out", default="u1-dryrun-report")
     ap.add_argument("--clearance", type=float, default=analyze.CLEARANCE,
                     help="mm above a finished surface below which a travel counts as a scar")
+    ap.add_argument("--map", action="append", metavar="T4=T3",
+                    help="head the screen assigned to a slicer filament above T3 (without it the "
+                         "firmware default applies: head 0); repeatable")
     args = ap.parse_args()
+    try:
+        maps = prep_gcode.parse_maps(args.map)
+    except ValueError as e:
+        ap.error(str(e))
     os.makedirs(args.out, exist_ok=True)
     tagged = os.path.join(args.out, "input.gcode")
     text = prep_gcode.read_gcode(args.gcode)
     with open(tagged, "w") as f:
-        f.write(prep_gcode.tag_lines(text))
+        f.write(prep_gcode.tag_lines(text, maps))
     rc = run_klippy(tagged, args.out)
     result = analyze.analyze(os.path.join(args.out, "trace.txt"), clearance=args.clearance,
                              line_types=analyze.line_types_from_gcode(text))
-    result.update(file=os.path.basename(args.gcode), klippy_rc=rc,
+    result.update(file=os.path.basename(args.gcode), klippy_rc=rc, unmapped_filaments=prep_gcode.unmapped_filaments(text, maps),
                   start_margin=prep_gcode.start_block_margin(text.splitlines()))
     with open(os.path.join(args.out, "report.json"), "w") as f:
         json.dump(result, f, indent=2)

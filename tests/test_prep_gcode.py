@@ -33,6 +33,26 @@ class PrepTest(unittest.TestCase):
         self.assertEqual(prep_gcode.tag_lines(""), "G28\n\n")
 
 
+class MapTest(unittest.TestCase):
+    def test_map_is_sent_to_the_firmware_before_homing(self):
+        out = prep_gcode.tag_lines(LAYER, prep_gcode.parse_maps(["T4=T3", "5=1"])).splitlines()
+        self.assertEqual(out[:3], ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=4 MAP_EXTRUDER=3",
+                                   "SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=5 MAP_EXTRUDER=1", "G28"])
+
+    def test_bad_map_is_refused_not_ignored(self):
+        for spec in ("T4", "T4=T4", "x=1", "T4=T3,T5=T1"):
+            self.assertRaises(ValueError, prep_gcode.parse_maps, [spec])
+
+    def test_filaments_above_t3_without_a_head_are_named(self):
+        text = "T1\nT4 ; change\nM104 S220 T6\nT5\n" + LAYER
+        self.assertEqual(prep_gcode.unmapped_filaments(text), [4, 5])
+        self.assertEqual(prep_gcode.unmapped_filaments(text, [(4, 3)]), [5])
+        import report
+        r = {"file": "f", "moves": 1, "tool_changes": 0, "motion_time_s": None, "tools": {}, "errors": [],
+             "scars": [], "unmapped_filaments": [4, 5]}
+        self.assertIn("head not known for T4, T5: this run printed them on head 0", report.summary(r))
+
+
 class StartMarginTest(unittest.TestCase):
     # The stock U1 purge line (machine start G-code), the move forum topic 44046 saw refused.
     STOCK = "T0\nG91\nG1 Y-50\nG90\nG1 Z1.5\nG0 X85 Y1 Z2 F18000\nG1 X185 E15 F360\n"

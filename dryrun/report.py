@@ -18,6 +18,10 @@ def summary(r):
                    % (s["line"], s["source"], s["tool"], s["from"], s["to"], s["z"], s["length_mm"], s["clearance_mm"]))
     if r.get("skipped_commands"):
         out.append("not exercised (no such hardware here): " + ", ".join(r["skipped_commands"]))
+    if r.get("unmapped_filaments"):
+        out.append("head not known for %s: this run printed them on head 0 (the firmware default); pass the"
+                   " head the screen shows, e.g. --map T%d=T3"
+                   % (", ".join("T%d" % t for t in r["unmapped_filaments"]), r["unmapped_filaments"][0]))
     m = r.get("start_margin")
     if m:
         out.append("start block: line %d (%s) leaves %.2f mm to the %s limit: a head with a %s offset %s %s%.2f mm"

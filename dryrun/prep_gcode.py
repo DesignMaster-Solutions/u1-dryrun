@@ -77,7 +77,26 @@ def start_block_margin(lines):
 NON_ASCII = re.compile(r"[^\x00-\x7f]")
 
 
-def tag_lines(text):
+def parse_maps(specs):
+    """["T4=T3", ...] -> [(4, 3)]: which head the screen assigned to a slicer filament."""
+    maps = []
+    for spec in specs or []:
+        m = re.match(r"^T?(\d+)=T?([0-3])$", spec, re.I)
+        if not m:
+            raise ValueError("--map wants T<filament>=T<head 0-3>, as on the screen (T4=T3), got %r" % spec)
+        maps.append((int(m.group(1)), int(m.group(2))))
+    return maps
+
+
+def unmapped_filaments(text, maps=()):
+    """Slicer filaments above T3 that the file selects and no --map names. The firmware default
+    table (print_task_config.py) sends every one of them to head 0; on the printer the screen
+    sets the real head when the print starts."""
+    used = {int(m.group(1)) for m in re.finditer(r"^T(\d+)\s*(;.*)?$", text, re.M)}
+    return sorted(t for t in used if t > 3 and t not in {f for f, _ in maps})
+
+
+def tag_lines(text, maps=()):
     lines, _ = strip_start_block(text.splitlines())
     out = []
     for i, line in enumerate(lines, 1):
@@ -85,7 +104,8 @@ def tag_lines(text):
     # Homed from the start, whatever the slicer's start block does or whether it is found.
     # Klipper's batch reader decodes each 4096-byte read on its own and silently drops one that
     # cuts a UTF-8 character (the U1 start G-code has Chinese comments). ASCII cannot be cut.
-    return NON_ASCII.sub("_", "G28\n" + "\n".join(out)) + "\n"
+    head = ["SET_PRINT_EXTRUDER_MAP CONFIG_EXTRUDER=%d MAP_EXTRUDER=%d" % m for m in maps] + ["G28"]
+    return NON_ASCII.sub("_", "\n".join(head + ["\n".join(out)])) + "\n"
 
 
 if __name__ == "__main__":
