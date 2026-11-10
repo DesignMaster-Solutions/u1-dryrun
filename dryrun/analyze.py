@@ -10,7 +10,8 @@ import math
 CELL = 0.5  # mm per height-map cell; about one line width
 CLEARANCE = 0.05  # mm; below this the nozzle tip is touching or dragging on the surface
 MIN_LENGTH = 5.0  # mm; shorter crossings are the connectors between neighbouring infill lines
-WASTE_TYPES = {"Prime tower"}  # material nobody keeps, so a mark on it does not matter
+# material nobody keeps, so a mark on it does not matter
+WASTE_TYPES = {"Prime tower", "Support", "Support interface", "Support transition"}
 
 
 def parse_trace(path):

@@ -63,6 +63,21 @@ class PrimeTowerTest(unittest.TestCase):
         self.assertEqual(result["scars"], [])
 
 
+class SupportTest(unittest.TestCase):
+    ROWS = [(10, 10, 0.25, 0), (30, 10, 0.25, 1), (10, 10, 0.25, 2), (40, 10, 0.25, 2)]
+
+    def test_travel_across_support_is_not_a_scar(self):
+        # real file, u1-klipper#22: three unlifted first-layer travels over support, which is thrown away
+        for kind in ("Support", "Support interface", "Support transition"):
+            result = analyze.analyze(trace(self.ROWS), line_types={1: kind, 2: kind})
+            self.assertEqual(result["scars"], [], kind)
+
+    def test_travel_inside_a_support_section_still_scars_the_part(self):
+        # the travel is tagged Support, the material under it is the part: still a scar
+        result = analyze.analyze(trace(self.ROWS), line_types={1: "Outer wall", 2: "Outer wall", 3: "Support"})
+        self.assertEqual(len(result["scars"]), 1)
+
+
 class PrepGcodeTest(unittest.TestCase):
     def test_start_block_is_blanked_but_line_numbers_survive(self):
         import prep_gcode
