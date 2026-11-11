@@ -47,9 +47,31 @@ The owner shared the two `.3mf` projects behind his photos ([forum 43745/21](htt
 | Bounding Bunny, plate 3 (229 layers) | 2.4.1 | X230.853 Y219.095, right back | 94 of 186 (first: line 129480, `G1 Z.45 F30000`); all 94 are right-side entries, as in the G-code he shared |
 | KOI Fish (324 layers) | 2.4.0 | X24.407 Y229.819, left back | 222 of 453 (first: line 32661, `G1 Z.25 F30000`, last at Z49.05); all 222 are left-side entries (`G1 X29.721 ...`), the 231 others start with an XY move |
 
-So the bunny project reproduces the shared file, and it is not only the right bed edge: on the KOI plate the tower is 24 mm from the left edge and the left-side entries lose the detour. 29.721 - 8.205 = 21.5 is inside the bed (`printable_area` starts at X0.5), so which detour point fails the bed check there is not identified yet. The earlier advice "keep the tower about 10 mm from the left and right edges" does not hold for this plate. Check a sliced file with `python3 tools/dock_drops.py file.gcode`: `0 of N` is the safe answer.
+So the bunny project reproduces the shared file, and it is not only the right bed edge. The earlier advice "keep the tower about 10 mm from the left and right edges" does not hold for the KOI plate. Check a sliced file with `python3 tools/dock_drops.py file.gcode`: `0 of N` is the safe answer.
 
-Not done: the 2.4.0 control for the KOI project (the 2.4.0 command line crashes on it, exit 139), the firmware run of either slice, a tower position that gives `0 of N` on these two plates.
+## Which detour point fails on each plate (11 November 2026)
+
+[`tools/tower_detour.py`](../tools/tower_detour.py) is a Python port of `detour_around_wipe_tower()` and of the bed check after it. It takes the tower box from what the tower extrudes in the file, recomputes the detour of every tool change and prints the point that is outside `printable_area`. Its prediction against the files: 186 of 186 tool changes on the bunny plate, 15 of 15 on the small reproduction, 449 of 453 on the KOI plate (the other 4 are left-side entries where the head did not start from the park position; the slicer wrote a detour or a direct XY move there).
+
+| Plate | Tower with ribs and brim | Point outside the bed (X0.5..270.5, Y1..271) |
+|---|---|---|
+| Bounding Bunny, plate 3 | X229.97..268.86 Y218.20..257.70 | right-side entries: the first detour point, X270.86, 0.36 mm past the right edge |
+| KOI Fish | X22.63..67.81 Y228.03..273.52 | left-side entries: the back corners of the tower box, Y275.52, 4.52 mm past the back edge |
+
+Why the back corner matters on the KOI plate: the head parks on the right of the tower (X70.82), so a left-side entry has to go round the box. The function builds two routes and takes the shorter. The forward one goes over the two back corners. The backward one, as written (`walk(false)` pushes `bbox_pts[i]` after stepping `i` back), goes from the right edge straight to the front-left corner and then to the back-left corner, so it also needs a back corner and never uses the front-right one. With the ribs reaching Y273.52 the back corners are at Y275.52, both routes fail the bed check and all left-side entries lose the detour. On this plate the ribs themselves print past Y271, the end of `printable_area`.
+
+Checked by moving the tower only (the project's `wipe_tower_y`/`wipe_tower_x` in `Metadata/project_settings.config`, nothing else) and slicing again with the 2.4.1 command line:
+
+| Project | Tower moved | Tool changes that lower Z at the dock |
+|---|---|---|
+| KOI Fish | 6 mm to the front (Y229.819 to Y223.819) | 0 of 453 (was 222); a left-side entry now reads `G1 X69.822 Y230.133`, `G1 X69.822 Y269.534`, `G1 X20.62 Y269.534`, then the entry |
+| Bounding Bunny, plate 3 | 1 mm to the left (X230.853 to X229.853) | 0 of 186 (was 94); right-side entries get their detour point at X269.87, and the left-side ones now go round the back: `G1 X269.87 Y225.407`, `G1 X269.87 Y259.711`, `G1 X226.96 Y259.711`, `G1 X226.96 Y225.407` |
+
+So the rule for 2.4.1 with "Wall gap" on is not a distance from the left and right edges: the tower box with its ribs and brim, plus 2 mm, has to be inside the bed on the right and at the back. `tower_detour.py` prints how far it is out.
+
+For the fix, two places in `src/libslic3r/GCode.cpp` (not compiled here): when the detour is rejected, `append_tcr` should still travel to the tower entry before "Force restore layer Z" (2.4.0 wrote that XY move first); and the backward walk should push `bbox_pts[i]` before stepping back, so the front route exists, and a route should be chosen among those inside the bed.
+
+Not done: the 2.4.0 control for the KOI project (the 2.4.0 command line crashes on it, exit 139), the firmware run of these slices, the projects opened in the Orca window, a printed part.
 
 ## The 74 travels
 
