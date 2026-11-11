@@ -43,8 +43,9 @@ out=$(docker run --rm -v "$twr:/work" "$image" sign.gcode --out /tmp/t); rc=$?
 [ "$rc" = 0 ] && echo "$out" | grep -q '^clean' || { echo "FAIL tower: the labelled file is not clean, exit $rc"; exit 1; }
 out=$(docker run --rm -v "$twr:/work" "$image" sign.gcode --out /tmp/t --skip prime_tower@26495); rc=$?
 echo "$out" | grep -E "what if|SCAR"
-[ "$rc" = 1 ] && echo "$out" | grep -q '15 tool changes' && echo "$out" | grep -q 'SCAR line 48402 (firmware, extruder): .* 37.5 mm' \
-  && ! echo "$out" | grep -q 'ERROR\|DRAG' || { echo "FAIL tower skip: exit $rc, expected 1 with only the dock scar at line 48402"; exit 1; }
+# The lift before each tool change stays outside the tower object, so the skip leaves no scar on the way to the dock.
+[ "$rc" = 0 ] && echo "$out" | grep -q '15 tool changes' && echo "$out" | grep -q '^clean' \
+  && ! echo "$out" | grep -q 'ERROR\|DRAG\|SCAR' || { echo "FAIL tower skip: exit $rc, expected a clean run with 15 tool changes"; exit 1; }
 rm -rf "$twr"
 # The workaround on the same files: the scar must be gone, on the real firmware.
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT

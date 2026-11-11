@@ -15,8 +15,11 @@ GCODE = "\n".join([
     "; WIPE_TOWER_START",
     "G1 X6.181 Y203.317 E-.56783",
     "EXCLUDE_OBJECT_END NAME=ring",
-    "G1 X241.842 Y105.35 Z.65",
+    "G91",
+    "G1 Z1.5 F1800",
+    "G90",
     "T1",
+    "G1 X241.842 Y105.35 Z.65",
     "G1  X259.092  E0.9580 ; X999 in a comment is not a move",
     "; WIPE_TOWER_END",
     "; WIPE_TOWER_START",
@@ -34,9 +37,10 @@ class SkippableTowerTest(unittest.TestCase):
         start = "EXCLUDE_OBJECT_START NAME=prime_tower"
         self.assertEqual(lines.count(start), 2)
         self.assertEqual(lines.count("EXCLUDE_OBJECT_END NAME=prime_tower"), 2)
-        # the wipe on the model stays in the model's object; the tool change is inside the tower's
-        self.assertEqual(lines[lines.index("EXCLUDE_OBJECT_END NAME=ring") + 1], start)
-        self.assertLess(lines.index(start), lines.index("T1"))
+        # the wipe on the model stays in the model's object; the lift and the tool change stay outside
+        # the tower's, so skipping the tower cannot drop them (the dock scar measured on 11 Nov 2026)
+        self.assertEqual(lines[lines.index("T1") + 1], start)
+        self.assertLess(lines.index("G1 Z1.5 F1800"), lines.index(start))
         self.assertEqual(lines[lines.index("; WIPE_TOWER_END") - 1], "EXCLUDE_OBJECT_END NAME=prime_tower")
 
     def test_defines_the_tower_from_its_own_moves_only(self):

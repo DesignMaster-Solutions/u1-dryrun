@@ -17,6 +17,7 @@ NAME = "prime_tower"
 MARK = "; skippable_tower: the prime tower is the object %s" % NAME
 XY = re.compile(r"\b([XY])(-?[\d.]+)")
 MOVE = re.compile(r"^G[0-3]\b")
+TOOL = re.compile(r"^T\d+\s*(;|$)")
 
 
 def process(text):
@@ -39,6 +40,11 @@ def process(text):
         # block: the tower starts after it (Klipper has one current object, no nesting).
         closes = [k for k, line in enumerate(block) if line.startswith("EXCLUDE_OBJECT_END")]
         cut = closes[-1] + 1 if closes else 1
+        # The tower also starts after the tool change: the retract, the lift and T<n> before it are
+        # the slicer protecting the model, and a skipped tower must not take them with it.
+        tools = [k for k, line in enumerate(block) if k >= cut and TOOL.match(line)]
+        if tools:
+            cut = tools[-1] + 1
         for line in block[cut:]:
             if MOVE.match(line):
                 for axis, value in XY.findall(line.split(";")[0]):
