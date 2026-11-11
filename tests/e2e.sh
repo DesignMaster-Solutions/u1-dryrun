@@ -33,6 +33,19 @@ out=$(docker run --rm -v "$PWD:/work" "$image" skip-then-toolchange.gcode --out 
 echo "$out" | grep -E "what if|DRAG"
 [ "$rc" = 1 ] && echo "$out" | grep -q 'DRAG line 205 (extruder1): .* 70.7 mm, \[92.7, 300.5\] -> \[82.7, 230.5\]' \
   || { echo "FAIL --skip B@80: exit $rc, expected 1 with the drag at line 205"; exit 1; }
+# What if the prime tower comes off the bed? (forum topic 44109) The slicer does not label the tower: unlabelled the
+# skip is refused; labelled by tools/skippable_tower.py the file stays clean, and the skip runs to the end.
+twr=$(mktemp -d); gzip -dc sign-orca-2.4.0.gcode.gz > "$twr/sign.gcode"
+docker run --rm -v "$twr:/work" "$image" sign.gcode --out /tmp/t --skip prime_tower@26495 2>&1 | grep -q 'defines no such object' \
+  || { echo "FAIL tower: the unlabelled file should have no prime_tower object"; exit 1; }
+python3 ../tools/skippable_tower.py "$twr/sign.gcode" | grep -q 'labelled as prime_tower in 30 blocks' || { echo "FAIL tower: not labelled"; exit 1; }
+out=$(docker run --rm -v "$twr:/work" "$image" sign.gcode --out /tmp/t); rc=$?
+[ "$rc" = 0 ] && echo "$out" | grep -q '^clean' || { echo "FAIL tower: the labelled file is not clean, exit $rc"; exit 1; }
+out=$(docker run --rm -v "$twr:/work" "$image" sign.gcode --out /tmp/t --skip prime_tower@26495); rc=$?
+echo "$out" | grep -E "what if|SCAR"
+[ "$rc" = 1 ] && echo "$out" | grep -q '15 tool changes' && echo "$out" | grep -q 'SCAR line 48402 (firmware, extruder): .* 37.5 mm' \
+  && ! echo "$out" | grep -q 'ERROR\|DRAG' || { echo "FAIL tower skip: exit $rc, expected 1 with only the dock scar at line 48402"; exit 1; }
+rm -rf "$twr"
 # The workaround on the same files: the scar must be gone, on the real firmware.
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 for f in helado-pipewrx-orca-2.4.1 sign-orca-2.4.1; do
