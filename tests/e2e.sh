@@ -17,6 +17,10 @@ run ring-orcaslicer-2.4.2.gcode.gz 0
 # A print that really scratched on a real U1 (file shared by its owner, see README): the same move must keep being flagged.
 run helado-pipewrx-orca-2.4.1.gcode.gz 1
 echo "$out" | grep -q 'SCAR line 130731 ' || { echo "FAIL helado: the scar at line 130731 moved or vanished"; exit 1; }
+# Snapmaker/OrcaSlicer#1168 in 15 layers (docs/orca-2.4.1-dock-travel.md): a sliced project read straight from
+# the .3mf; the head must keep being caught going through the part on its way from the dock to the tower.
+run tower-right-edge-orca-2.4.1.3mf 1
+[ "$(echo "$out" | grep -c "^CROSSING line \(9734\|14909\|20512\) ")" = 3 ] || { echo "FAIL tower-right-edge: expected the 3 crossings at lines 9734, 14909, 20512"; exit 1; }
 run out-of-range.gcode 2
 # What if I skip an object mid-print? Clean without the skip; with it the stock firmware (2.0.0 and
 # 2.1.0, Snapmaker/u1-klipper#22) drags the head 70 mm across the bed on the E-only chute prime.

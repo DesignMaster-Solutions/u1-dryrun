@@ -30,6 +30,8 @@ In this file the detour starts 8.205 mm outside the entry point (left: 236.165 -
 
 So on this plate 5.6 mm of tower position decides it: at X236.5 the detour point on the right is past the bed edge and is dropped, at X230.853 it is at X265.45, inside the bed, and the head lowers at the tower. Re-slicing the `.3mf` with the 2.4.1 command line gives the same moves as the first row (no difference outside comments and M73).
 
+The first row is a case of `tests/e2e.sh`: the `.3mf` is read as it is and the three crossings must keep being reported.
+
 Not verified: the project opened in the Orca window (it was sliced from the command line on macOS), a slice with "Wall gap" off, and a printed part.
 
 ## The 74 travels
