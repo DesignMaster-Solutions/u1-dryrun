@@ -18,7 +18,19 @@ New in 2.4.1 (absent in v2.4.0): with `wipe_tower_wall_gap` on, the head parks b
 
 In this file the detour starts 8.205 mm outside the entry point (left: 236.165 - 8.205 = 227.96). On the right that is 262.665 + 8.205 = 270.87, past the bed edge at X270.5, so every right-side entry loses the detour.
 
-Not verified: a re-slice with the tower moved left or with "Wall gap" off, and a printed part.
+## Small reproduction (11 November 2026)
+
+[`examples/tower-right-edge-orca-2.4.1.3mf`](../examples/tower-right-edge-orca-2.4.1.3mf) is a project that shows it in a 2 hour, 15 layer plate instead of a 22 hour one: the two-colour sign from `examples/` (ring.stl + inlay.stl), default U1 0.20 mm profile, two Snapmaker PLA, prime tower at X236.5 Y100. Open it in Snapmaker Orca and slice. Same model and profile, three slices, each run through the U1 firmware 2.1.0:
+
+| Slicer | Prime tower | Tool changes that lower Z at the dock | Dry Run |
+|---|---|---|---|
+| Snapmaker Orca 2.4.1 | X236.5 Y100 | 8 of 15 (first: line 4525, `G1 Z.45 F30000` right after `T0`) | 3 `CROSSING` (lines 9734, 14909, 20512: 91.0, 22.5 and 91.0 mm through the part at layer height) and `SCAR line 36911` (91.0 mm of the finished top at Z3.05), exit 1 |
+| Snapmaker Orca 2.4.1 | X230.853 Y100 | 0 of 15 (detour written: `G1 X265.45 ...`) | no crossing; only the final purge travel of #1149 |
+| Snapmaker Orca 2.4.0 | X236.5 Y100 | 0 of 15 | clean, exit 0 |
+
+So on this plate 5.6 mm of tower position decides it: at X236.5 the detour point on the right is past the bed edge and is dropped, at X230.853 it is at X265.45, inside the bed, and the head lowers at the tower. Re-slicing the `.3mf` with the 2.4.1 command line gives the same moves as the first row (no difference outside comments and M73).
+
+Not verified: the project opened in the Orca window (it was sliced from the command line on macOS), a slice with "Wall gap" off, and a printed part.
 
 ## The 74 travels
 
