@@ -38,6 +38,19 @@ Turning "Wall gap" off is not a workaround on 2.4.1 (rows 3 and 4, sliced 11 Nov
 
 Not verified: the project opened in the Orca window (it was sliced from the command line on macOS) and a printed part.
 
+## The owner's two projects, re-sliced (11 November 2026)
+
+The owner shared the two `.3mf` projects behind his photos ([forum 43745/21](https://forum.snapmaker.com/t/43745/21)). Each was sliced as it is with the Snapmaker Orca 2.4.1 command line on macOS (`--allow-newer-file --slice <plate>`) and read with [`tools/dock_drops.py`](../tools/dock_drops.py), which counts the tool changes whose first move after `T<n>` is a Z-only move. Text only: these two slices were not run through the firmware.
+
+| Project | Saved with | Prime tower | Tool changes that lower Z at the dock |
+|---|---|---|---|
+| Bounding Bunny, plate 3 (229 layers) | 2.4.1 | X230.853 Y219.095, right back | 94 of 186 (first: line 129480, `G1 Z.45 F30000`); all 94 are right-side entries, as in the G-code he shared |
+| KOI Fish (324 layers) | 2.4.0 | X24.407 Y229.819, left back | 222 of 453 (first: line 32661, `G1 Z.25 F30000`, last at Z49.05); all 222 are left-side entries (`G1 X29.721 ...`), the 231 others start with an XY move |
+
+So the bunny project reproduces the shared file, and it is not only the right bed edge: on the KOI plate the tower is 24 mm from the left edge and the left-side entries lose the detour. 29.721 - 8.205 = 21.5 is inside the bed (`printable_area` starts at X0.5), so which detour point fails the bed check there is not identified yet. The earlier advice "keep the tower about 10 mm from the left and right edges" does not hold for this plate. Check a sliced file with `python3 tools/dock_drops.py file.gcode`: `0 of N` is the safe answer.
+
+Not done: the 2.4.0 control for the KOI project (the 2.4.0 command line crashes on it, exit 139), the firmware run of either slice, a tower position that gives `0 of N` on these two plates.
+
 ## The 74 travels
 
 ```
