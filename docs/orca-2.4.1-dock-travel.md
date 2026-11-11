@@ -26,13 +26,17 @@ In this file the detour starts 8.205 mm outside the entry point (left: 236.165 -
 |---|---|---|---|
 | Snapmaker Orca 2.4.1 | X236.5 Y100 | 8 of 15 (first: line 4525, `G1 Z.45 F30000` right after `T0`) | 3 `CROSSING` (lines 9734, 14909, 20512: 91.0, 22.5 and 91.0 mm through the part at layer height) and `SCAR line 36911` (91.0 mm of the finished top at Z3.05), exit 1 |
 | Snapmaker Orca 2.4.1 | X230.853 Y100 | 0 of 15 (detour written: `G1 X265.45 ...`) | no crossing; only the final purge travel of #1149 |
+| Snapmaker Orca 2.4.1, "Wall gap" off | X236.5 Y100 | 15 of 15 (first: line 2106, `G1 Z.25 F30000`) | 7 `CROSSING` (the 3 right-side entries plus 4 left-side ones, first at line 2109: 101.5 mm at Z0.25) and the same `SCAR` (line 36786), exit 1 |
+| Snapmaker Orca 2.4.1, "Wall gap" off | X230.853 Y100 | 15 of 15 | 7 `CROSSING` and the same `SCAR`, exit 1 |
 | Snapmaker Orca 2.4.0 | X236.5 Y100 | 0 of 15 | clean, exit 0 |
 
 So on this plate 5.6 mm of tower position decides it: at X236.5 the detour point on the right is past the bed edge and is dropped, at X230.853 it is at X265.45, inside the bed, and the head lowers at the tower. Re-slicing the `.3mf` with the 2.4.1 command line gives the same moves as the first row (no difference outside comments and M73).
 
 The first row is a case of `tests/e2e.sh`: the `.3mf` is read as it is and the three crossings must keep being reported.
 
-Not verified: the project opened in the Orca window (it was sliced from the command line on macOS), a slice with "Wall gap" off, and a printed part.
+Turning "Wall gap" off is not a workaround on 2.4.1 (rows 3 and 4, sliced 11 November 2026 from the same `.3mf` with only `wipe_tower_wall_gap` set to 0): without the park-and-detour path every tool change writes `G1 Z<layer>` before the XY move to the tower, on both sides and wherever the tower is. 2.4.0 writes the XY move first (`G1 X15.250 Y220.250 F30000`, then `G1 Z.45`). The one setting that came out clean on 2.4.1 is "Wall gap" on with the tower far enough from the bed edge (row 2). Row 3 is [`examples/tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz`](../examples/tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz) and a case of `tests/e2e.sh`.
+
+Not verified: the project opened in the Orca window (it was sliced from the command line on macOS) and a printed part.
 
 ## The 74 travels
 

@@ -21,6 +21,10 @@ echo "$out" | grep -q 'SCAR line 130731 ' || { echo "FAIL helado: the scar at li
 # the .3mf; the head must keep being caught going through the part on its way from the dock to the tower.
 run tower-right-edge-orca-2.4.1.3mf 1
 [ "$(echo "$out" | grep -c "^CROSSING line \(9734\|14909\|20512\) ")" = 3 ] || { echo "FAIL tower-right-edge: expected the 3 crossings at lines 9734, 14909, 20512"; exit 1; }
+# The same project with "Wall gap" off (the workaround suggested in #1168): not a workaround on 2.4.1, all 15 tool
+# changes lower Z at the dock, so the left-side tower entries (lines 2109, 12682) go through the part too.
+run tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz 1
+[ "$(echo "$out" | grep -c "^CROSSING line \(2109\|9725\|12682\|14882\) ")" = 4 ] || { echo "FAIL wall-gap-off: expected the crossings at lines 2109, 9725, 12682, 14882"; exit 1; }
 run out-of-range.gcode 2
 # What if I skip an object mid-print? Clean without the skip; with it the stock firmware (2.0.0 and
 # 2.1.0, Snapmaker/u1-klipper#22) drags the head 70 mm across the bed on the E-only chute prime.
