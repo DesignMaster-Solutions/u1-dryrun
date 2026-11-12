@@ -43,6 +43,15 @@ class DockDropsTest(unittest.TestCase):
             got = dd.primes(lines, dd.find(lines)[1])
             self.assertEqual((len(got), {mm for _, mm in got}), (want, mms), name)
 
+    def test_prints_total_pushed_out_at_the_dock(self):
+        # 15 tool changes: 2 mm the first, 10 mm the other 14
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            dd.main(["x", os.path.join(EX, "tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz")])
+        self.assertIn("142 mm in total", buf.getvalue())
+
     def test_exit_codes(self):
         self.assertEqual(dd.main(["x", os.path.join(EX, "tower-right-edge-orca-2.4.1.3mf")]), 1)
         self.assertEqual(dd.main(["x", os.path.join(EX, "sign-orca-2.4.0.gcode.gz")]), 0)

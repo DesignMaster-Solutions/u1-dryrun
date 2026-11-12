@@ -97,8 +97,8 @@ def main(argv):
         print("  ... and %d more, last at line %d" % (len(drops) - 5, drops[-1][0]))
     pr = primes(lines, drops)
     if pr:
-        print("%d of those %d also un-retract at the dock, before the head moves (first: line %d, %g mm)"
-              % (len(pr), len(drops), pr[0][0], pr[0][1]))
+        print("%d of those %d also un-retract at the dock, before the head moves (first: line %d, %g mm; %g mm in total)"
+              % (len(pr), len(drops), pr[0][0], pr[0][1], round(sum(mm for _, mm in pr), 2)))
     return 1 if drops else 0
 
 
