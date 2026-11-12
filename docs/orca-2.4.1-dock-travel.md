@@ -73,6 +73,19 @@ For the fix, two places in `src/libslic3r/GCode.cpp` (not compiled here): when t
 
 Not done: the 2.4.0 control for the KOI project (the 2.4.0 command line crashes on it, exit 139), the firmware run of these slices, the projects opened in the Orca window, a printed part.
 
+## A changed tool change G-code does not move the un-retract (11 November 2026)
+
+A U1 owner posted a tool change G-code that drops `SM_PRINT_PREEXTRUDE_FILAMENT` and waits for temperature (`M109`), with "retraction length (tool change)" at 3 to 5 mm, "Wall gap" off and a rectangle prime tower ([forum 43745/24](https://forum.snapmaker.com/t/43745/24)); his test print left the excess on the tower. Sliced here with the 2.4.1 command line, same model, tower at X236.5 Y100, read with `tools/dock_drops.py`:
+
+| Tool change G-code | Tool change retraction | Lower Z at the dock | Un-retract at the dock |
+|---|---|---|---|
+| stock | 10 mm | 15 of 15 | 15 of 15 (2 mm the first, 10 mm the others) |
+| his | 5 mm | 15 of 15 | 15 of 15 (2 mm the first, 5 mm the others) |
+| his | 3 mm | 15 of 15 | 15 of 15 (2 mm the first, 3 mm the others) |
+| his, rib tower | 10 mm | 15 of 15 | 15 of 15 |
+
+The slicer writes `G1 Z<layer>` and `G1 E<retraction>` after the template ends, so the template cannot reorder them. What the setting changes is the length pushed out at the dock. Text only: not run through the firmware, nothing printed.
+
 ## The 74 travels
 
 ```
