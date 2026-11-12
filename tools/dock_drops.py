@@ -9,7 +9,7 @@ This reads the G-code as text, in a second, without the firmware. It tells you w
 has such tool changes, not whether the head touches the part: that needs the dry run.
 
 Usage: python3 dock_drops.py file.gcode|file.gcode.gz|sliced.3mf
-Exit code: 0 none, 1 at least one, 2 not a sliced file.
+Exit code: 0 none at the height already printed, 1 at least one, 2 not a sliced file.
 """
 import gzip
 import re
@@ -58,6 +58,25 @@ def find(lines):
     return total, drops
 
 
+def at_printed_height(lines, drops, clearance=0.05):
+    """The drops that end within `clearance` mm of the highest point extruded so far, or below it.
+    A drop that stops a hop above everything printed (OrcaSlicer 2.5.0-rc, by object) cannot touch."""
+    at, out, z, top = dict(drops), [], 0.0, 0.0
+    for n, line in enumerate(lines, 1):
+        code = line.split(";")[0]
+        if not MOVE.match(code):
+            continue
+        mz = re.search(r"\bZ(-?\d*\.?\d+)", code)
+        if mz:
+            z = float(mz.group(1))
+            if n in at and z <= top + clearance:
+                out.append((n, at[n]))
+        e = re.search(r"\bE(\d*\.?\d+)", code)  # positive E with XY: plastic laid at this height
+        if e and float(e.group(1)) > 0 and re.search(r"[XY]-?[\d.]", code):
+            top = max(top, z)
+    return out
+
+
 def primes(lines, drops):
     """[(line number, mm)] of the un-retracts pushed out at the dock: after a Z drop, an
     extruder-only move with positive E that comes before the first XY move. That plastic comes
@@ -95,6 +114,11 @@ def main(argv):
         print("  line %d: %s" % (n, line))
     if len(drops) > 5:
         print("  ... and %d more, last at line %d" % (len(drops) - 5, drops[-1][0]))
+    low = at_printed_height(lines, drops)
+    if len(low) < len(drops):
+        print("%d of those %d end above everything printed so far (a hop, as when printing by object), not counted"
+              % (len(drops) - len(low), len(drops)))
+    drops = low
     pr = primes(lines, drops)
     if pr:
         print("%d of those %d also un-retract at the dock, before the head moves (first: line %d, %g mm; %g mm in total)"
