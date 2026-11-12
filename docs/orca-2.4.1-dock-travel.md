@@ -84,7 +84,19 @@ A U1 owner posted a tool change G-code that drops `SM_PRINT_PREEXTRUDE_FILAMENT`
 | his | 3 mm | 15 of 15 | 15 of 15 (2 mm the first, 3 mm the others) |
 | his, rib tower | 10 mm | 15 of 15 | 15 of 15 |
 
-The slicer writes `G1 Z<layer>` and `G1 E<retraction>` after the template ends, so the template cannot reorder them. What the setting changes is the length pushed out at the dock. Text only: not run through the firmware, nothing printed.
+The slicer writes `G1 Z<layer>` and `G1 E<retraction>` after the template ends, so the template cannot reorder them. What the setting changes is the length pushed out at the dock.
+
+**Correction, same day, after running them through the firmware.** The three rectangle-tower slices above are not printable: with the tower at X236.5 the rectangle tower's outer line goes to X271.41, 0.9 mm past the U1 limit (270.5), and the firmware stops at the first tower layer (`Move out of range on X axis: 271.410 95.090 0.250`, line 2247). The command-line slicer does not warn; only the rib-tower slice fits. The counts in the table are still what the files say, but the plates had to be redone. Re-sliced with the tower at X225 Y100 and run through the U1 firmware:
+
+| Tool change G-code | Tool change retraction | Un-retract at the dock | Firmware run | Scars | Crossings |
+|---|---|---|---|---|---|
+| stock | 10 mm | 15 of 15 | to the end, 15 tool changes | 2 | 7 |
+| stock | 5 mm | 15 of 15 | to the end | 2 | 7 |
+| stock | 3 mm | 15 of 15 | to the end | 2 | 7 |
+| his | 5 mm | 15 of 15 | to the end | 2 | 7 |
+| his | 3 mm | 15 of 15 | to the end | 2 | 7 |
+
+The two scars and the seven crossings are the same moves in all five (the scars: dock to tower at Z3.05 over 99.0 mm of finished surface, and part to tower at Z3.05 over 159.5 mm). Neither the template nor the retraction length changes where the head goes. Nothing printed: how much string 3, 5 or 10 mm leaves is not something the firmware run shows.
 
 ## The 74 travels
 
