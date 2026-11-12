@@ -4,6 +4,8 @@ File: a U1 owner's plate shared on the forum (https://forum.snapmaker.com/t/4374
 
 Run: the whole file through the U1 firmware 2.1.0 (Klipper exited normally at 72284 s of print time), then `tools/tower_travels.py` on the trace. When this was written the standard report was clean, because these crossings are covered by the next layers; this script counts any material printed so far.
 
+**Confirmed by Snapmaker, 12 November 2026.** On [OrcaSlicer#1168](https://github.com/Snapmaker/OrcaSlicer/issues/1168#issuecomment-6814171273) a Snapmaker developer took the KOI Fish project below and wrote: with the prime tower at the edge of the bed, the Z axis goes down first and then moves to the tower (incorrect); with the tower moved away from the edge, it moves to the tower first and then goes down (correct). They suggest keeping the tower away from the edge and say the December version of Snapmaker Orca will fix it. Not yet checked here: no build with the fix exists to replay the two projects.
+
 ## What happens
 
 - 94 of the 187 tool changes enter the tower on its right side (X262.665). In all 94 the slicer writes `G1 Z<layer> F30000` right after `T<n>`, before any XY move. The firmware has just left the new head at its dock exit (X43.5, X94.2 or X161.7, Y250), so the Z drop happens there, and the tower block's first move (`G1  X262.665 Y...`) crosses the plate at the height of the layer just printed.
