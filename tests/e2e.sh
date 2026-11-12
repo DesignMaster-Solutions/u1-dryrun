@@ -25,6 +25,9 @@ run tower-right-edge-orca-2.4.1.3mf 1
 # changes lower Z at the dock, so the left-side tower entries (lines 2109, 12682) go through the part too.
 run tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz 1
 [ "$(echo "$out" | grep -c "^CROSSING line \(2109\|9725\|12682\|14882\) ")" = 4 ] || { echo "FAIL wall-gap-off: expected the crossings at lines 2109, 9725, 12682, 14882"; exit 1; }
+# The same plate and tower place (X236.5 Y100) from the official OrcaSlicer 2.5.0-rc, its own U1 profile: no drop at
+# the dock, no crossing. Keeps a multicolour upstream slice with a prime tower in the suite.
+run tower-right-edge-orcaslicer-2.5.0-rc.gcode.gz 0
 run out-of-range.gcode 2
 # What if I skip an object mid-print? Clean without the skip; with it the stock firmware (2.0.0 and
 # 2.1.0, Snapmaker/u1-klipper#22) drags the head 70 mm across the bed on the E-only chute prime.
