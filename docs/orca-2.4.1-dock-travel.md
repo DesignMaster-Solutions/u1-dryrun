@@ -151,3 +151,17 @@ Not done: the 2.4.0 control for the KOI project (the 2.4.0 command line crashes 
 8630084 gcode extruder z0=42.25 z=42.25 (43.5, 250.0) -> (262.7, 233.8) over 133.0 mm, min clearance 0.00
 8698565 gcode extruder2 z0=42.85 z=42.85 (161.7, 250.0) -> (262.7, 244.6) over 24.0 mm, min clearance 0.00
 ```
+
+## The string on the side of the tower is the same bug (11 November 2026)
+
+Owners describe a second symptom on 2.4.1 ([forum 44194](https://forum.snapmaker.com/t/filament-swap/44194)): after picking up the new head the printer pauses, extrudes, then goes to the tower and leaves a string on its side. In the files, the line after the Z drop at the dock is the un-retract: `G1 Z.45 F30000`, `G1 E10 F1800`, then `G1  X259.092 Y121.900 F30000` (small reproduction, lines 4525 to 4527). The plastic comes out in the air at the dock and rides to the tower on the nozzle. `tools/dock_drops.py` counts it:
+
+| File | Lower Z at the dock | Un-retract at the dock |
+|---|---|---|
+| `examples/tower-right-edge-orca-2.4.1.3mf` ("Wall gap" on, tower at the edge) | 8 of 15 | 8 (10 mm each) |
+| `examples/tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz` | 15 of 15 | 15 (2 mm the first, 10 mm the others) |
+| `examples/sign-orca-2.4.1.gcode.gz` ("Wall gap" on, tower away from the edge) | 0 of 15 | 0: `G1 E10` comes after the XY move and the Z move, at the tower (line 9738) |
+
+The un-retract is written by the slicer after the "Change filament G-code" of the printer profile ends, so editing that template cannot move it. A workaround posted on the forum ([43745/24](https://forum.snapmaker.com/t/43745/24)) differs from the stock template in three lines: `M104` became `M109` twice and `SM_PRINT_PREEXTRUDE_FILAMENT INDEX=<n>` was removed. In the U1 firmware (`klippy/extras/print_stats.py`, `cmd_SM_PRINT_PREEXTRUDE_FILAMENT`) that command does its work once per head per print (waste chute, 20 mm, cut, wipe) and returns at once on later tool changes, so removing it only skips the first prime of each head. A shorter tool change retraction pushes less plastic out at the dock; it does not move the un-retract.
+
+Not done: a slice with that template (text comparison only), a printed part.

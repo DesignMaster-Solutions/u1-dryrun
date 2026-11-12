@@ -58,6 +58,25 @@ def find(lines):
     return total, drops
 
 
+def primes(lines, drops):
+    """[(line number, mm)] of the un-retracts pushed out at the dock: after a Z drop, an
+    extruder-only move with positive E that comes before the first XY move. That plastic comes
+    out in the air and rides to the prime tower on the nozzle."""
+    out = []
+    for n, _ in drops:
+        for k in range(n, min(n + 20, len(lines))):   # lines[n] is the line after the drop
+            code = lines[k].split(";")[0].strip()
+            if not MOVE.match(code):
+                continue
+            if AXIS.search(code):
+                break
+            e = re.search(r"\bE(\d*\.?\d+)", code)
+            if e:
+                out.append((k + 1, float(e.group(1))))
+                break
+    return out
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__.strip())
@@ -76,6 +95,10 @@ def main(argv):
         print("  line %d: %s" % (n, line))
     if len(drops) > 5:
         print("  ... and %d more, last at line %d" % (len(drops) - 5, drops[-1][0]))
+    pr = primes(lines, drops)
+    if pr:
+        print("%d of those %d also un-retract at the dock, before the head moves (first: line %d, %g mm)"
+              % (len(pr), len(drops), pr[0][0], pr[0][1]))
     return 1 if drops else 0
 
 
