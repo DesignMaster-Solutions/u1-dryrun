@@ -3,7 +3,8 @@
 
   issue_check.py fetch DIR   reads the issue body from $BODY, saves the linked file in DIR and
                              prints ok=, name=, version= and ref= lines for $GITHUB_OUTPUT
-  issue_check.py reply DIR   prints the Markdown reply from DIR/summary.txt and DIR/rc
+  issue_check.py reply DIR   prints the Markdown reply from DIR/summary.txt, DIR/rc and, when
+                             there, DIR/checks.txt (the output of tools/check.py)
                              ($VERSION and $RUN_URL come from the workflow)
 
 The body is untrusted: only the whitelisted firmware and fixed file names ever leave this script.
@@ -68,7 +69,7 @@ def download(url):
     return data
 
 
-def reply(summary, rc, version, run_url):
+def reply(summary, rc, version, run_url, checks=""):
     if rc == FETCH_FAILED:
         return ("**I could not read the file:** %s.\n\nEdit this issue (attach the zipped file or fix the link) "
                 "and the check runs again." % summary.strip()[:2000])
@@ -77,7 +78,12 @@ def reply(summary, rc, version, run_url):
         1: "**Scar found.** At least one travel crosses a surface that is already printed, with no clearance.",
         2: "**The firmware rejected this file.** It would stop the print at the line below.",
     }.get(rc, "**The check did not finish.** Nothing below is a verdict on the file.")
-    summary = summary.replace("```", "'''")[:60000]
+    summary = summary.replace("```", "'''")[:55000]
+    text = ""
+    if checks.strip():
+        text = ("\n\nSeparately, four checks that read the file as text, with no firmware (`tools/check.py`). They look "
+                "for patterns owners have reported on the forum and say nothing about a scar:\n\n"
+                "```\n%s\n```" % checks.replace("```", "'''").strip()[:5000])
     return (
         f"{verdict}\n\n"
         f"Run through Snapmaker's u1-klipper, firmware {version}, in batch mode:\n\n"
@@ -86,7 +92,7 @@ def reply(summary, rc, version, run_url):
         f"[this run]({run_url}).\n\n"
         "A scar is a geometric prediction, not a measurement: there is no heating, ooze or sensor here, and "
         "the start block before the first layer does not run. If you printed this file, please say below "
-        "whether this matches what you saw on the U1, either way."
+        "whether this matches what you saw on the U1, either way." + text
     )
 
 
@@ -113,7 +119,11 @@ def main(cmd, d):
             summary = f.read()
         with open(os.path.join(d, "rc")) as f:
             rc = int(f.read().strip() or -1)
-        print(reply(summary, rc, os.environ.get("VERSION", DEFAULT), os.environ.get("RUN_URL", "")))
+        checks = ""
+        if os.path.exists(os.path.join(d, "checks.txt")):
+            with open(os.path.join(d, "checks.txt")) as f:
+                checks = f.read()
+        print(reply(summary, rc, os.environ.get("VERSION", DEFAULT), os.environ.get("RUN_URL", ""), checks))
     else:
         sys.exit(__doc__)
 

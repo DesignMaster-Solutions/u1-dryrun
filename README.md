@@ -6,7 +6,7 @@ It runs [Snapmaker/u1-klipper](https://github.com/Snapmaker/u1-klipper) in Klipp
 
 Entered in the Snapmaker Innovation Fund, Phase 2: [U1 Dry Run on the Snapmaker forum](https://forum.snapmaker.com/t/43986). The same firmware runner drives [U1 Fix Pack](https://github.com/DesignMaster-Solutions/u1-fixpack), which reproduces two open u1-klipper bugs and tests a patch for each.
 
-**No install:** open a [Check a sliced file](https://github.com/DesignMaster-Solutions/u1-dryrun/issues/new?template=check-a-file.yml) issue, drag in your zipped `.gcode` or `.gcode.3mf` (or paste a public link), pick the firmware, and a bot answers in the issue in about 5 minutes with the same verdict and report. The file runs in a GitHub Actions container with no network. It becomes public in the issue, so only attach what you can share. To run it on your own machine instead:
+**No install:** open a [Check a sliced file](https://github.com/DesignMaster-Solutions/u1-dryrun/issues/new?template=check-a-file.yml) issue, drag in your zipped `.gcode` or `.gcode.3mf` (or paste a public link), pick the firmware, and a bot answers in the issue in about 5 minutes with the same verdict and report, plus what the four text checks (`tools/check.py`) say about the file. The file runs in a GitHub Actions container with no network. It becomes public in the issue, so only attach what you can share. To run it on your own machine instead:
 
 ```
 $ docker build -t u1-dryrun https://github.com/DesignMaster-Solutions/u1-dryrun.git

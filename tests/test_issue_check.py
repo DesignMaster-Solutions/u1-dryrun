@@ -78,6 +78,16 @@ class IssueCheckTest(unittest.TestCase):
         self.assertNotIn("u1-klipper", r)
         self.assertNotIn("artifact", r)
 
+    def test_text_checks_go_in_their_own_block_and_only_when_they_ran(self):
+        r = issue_check.reply("clean", 0, "2.1.0", "https://run", "== dock_drops\n``` @x\n== 1 of 4 checks report this file: dock_drops")
+        self.assertIn("1 of 4 checks report this file: dock_drops", r)
+        self.assertIn("tools/check.py", r)
+        self.assertEqual(r.count("```"), 4)
+        self.assertLess(r.index("**Clean.**"), r.index("tools/check.py"))
+        self.assertNotIn("tools/check.py", issue_check.reply("clean", 0, "2.1.0", "https://run"))
+        self.assertNotIn("tools/check.py", issue_check.reply("clean", 0, "2.1.0", "https://run", " \n"))
+        self.assertNotIn("tools/check.py", issue_check.reply("no link", issue_check.FETCH_FAILED, "2.1.0", "u", "x"))
+
 
 if __name__ == "__main__":
     unittest.main()

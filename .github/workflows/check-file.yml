@@ -23,6 +23,11 @@ jobs:
         env:
           BODY: ${{ github.event.issue.body }}
         run: python3 tools/issue_check.py fetch work >> "$GITHUB_OUTPUT"
+      - name: Text checks, no Docker
+        if: steps.fetch.outputs.ok == 'true'
+        env:
+          NAME: ${{ steps.fetch.outputs.name }}
+        run: python3 tools/check.py "work/$NAME" > work/checks.txt 2>&1 || true
       - name: Build the firmware runner
         if: steps.fetch.outputs.ok == 'true'
         env:
