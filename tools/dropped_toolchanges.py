@@ -52,7 +52,7 @@ def main(argv):
     if tower and len(heads) == 1:
         print(f"DROPPED TOOL CHANGES: {tower} prime tower blocks, but only {names} is ever selected.")
         print("The slicer planned more than one filament and wrote a single-head file: every colour")
-        print("prints with that head. Known on Snapmaker Orca 2.4.1 (OrcaSlicer#1124). Do not print it.")
+        print("prints with that head. Known on Snapmaker Orca 2.4.1 (OrcaSlicer#1124, #1130). Do not print it.")
         return 1
     print(f"ok: heads selected {names}; prime tower blocks {tower}")
     return 0
