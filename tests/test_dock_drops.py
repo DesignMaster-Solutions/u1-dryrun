@@ -52,6 +52,15 @@ class DockDropsTest(unittest.TestCase):
             dd.main(["x", os.path.join(EX, "tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz")])
         self.assertIn("142 mm in total", buf.getvalue())
 
+    def test_no_prime_tower_return(self):
+        # OrcaSlicer#1083, docs/orca-2.4.1-no-tower-return.md: 2 boxes, 2 heads, prime tower off
+        for name, low, code in (("no-tower-return-orca-2.4.1.gcode.gz", 42, 1),
+                                ("no-tower-return-orca-2.4.1-absolute-lift.gcode.gz", 0, 0)):
+            lines = dd.read_lines(os.path.join(EX, name))
+            total, drops = dd.find(lines)
+            self.assertEqual((total, len(drops), len(dd.at_printed_height(lines, drops))), (50, 50, low), name)
+            self.assertEqual(dd.main(["x", os.path.join(EX, name)]), code, name)
+
     def test_exit_codes(self):
         self.assertEqual(dd.main(["x", os.path.join(EX, "tower-right-edge-orca-2.4.1.3mf")]), 1)
         self.assertEqual(dd.main(["x", os.path.join(EX, "sign-orca-2.4.0.gcode.gz")]), 0)
