@@ -22,13 +22,14 @@ class CheckTest(unittest.TestCase):
     def test_clean_file_reports_nothing(self):
         rc, out = run("sign-orca-2.4.0.gcode.gz")
         self.assertEqual(rc, 0, out)
-        self.assertIn("== 0 of 6 checks report this file", out)
+        self.assertIn("== 0 of 7 checks report this file", out)
 
     def test_each_reported_file_names_its_check(self):
         for name, who in (
             ("brim-by-object-orca-2.4.1.gcode.gz", "brim_wrong_head"),
             ("no-sparse-layers-orca-2.4.1.gcode.gz", "tower_below_print"),
             ("tower-right-edge-orca-2.4.1.3mf", "dock_drops"),
+            ("bed-for-late-interface-orca-2.4.1.gcode.gz", "bed_hotter_than_first_layer"),
         ):
             rc, out = run(name)
             self.assertEqual(rc, 1, out)
@@ -37,7 +38,7 @@ class CheckTest(unittest.TestCase):
     def test_one_colour_file_is_clean_not_an_error(self):
         rc, out = run("ring-orcaslicer-2.4.2.gcode.gz")
         self.assertEqual(rc, 0, out)
-        self.assertIn("== 0 of 6", out)
+        self.assertIn("== 0 of 7", out)
 
     def test_by_object_hop_above_the_print_is_not_a_dock_drop(self):
         # OrcaSlicer 2.5.0-rc lowers the new head to 0.4 mm above the finished object; 2.4.1 to its top
