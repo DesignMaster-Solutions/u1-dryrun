@@ -49,6 +49,8 @@ The owner shared the two `.3mf` projects behind his photos ([forum 43745/21](htt
 | Bounding Bunny, plate 3 (229 layers) | 2.4.1 | X230.853 Y219.095, right back | 94 of 186 (first: line 129480, `G1 Z.45 F30000`); all 94 are right-side entries, as in the G-code he shared |
 | KOI Fish (324 layers) | 2.4.0 | X24.407 Y229.819, left back | 222 of 453 (first: line 32661, `G1 Z.25 F30000`, last at Z49.05); all 222 are left-side entries (`G1 X29.721 ...`), the 231 others start with an XY move |
 
+Recounted on 12 November 2026, after `dock_drops.py` stopped counting a hop that ends above everything printed: both projects sliced again from the owner's files and read with [`tools/check.py`](../tools/check.py). The counts are the same (94 of 186 and 222 of 453; the G-code he shared also reads 94 of 186), every one of them also un-retracts at the dock (923 mm and 2203 mm of filament in total), and the other three checks (tower below the part, brim on another head, dropped tool changes) are clean on both. The line number of the first one moves by a few lines between slices of the bunny plate (129440 this time).
+
 So the bunny project reproduces the shared file, and it is not only the right bed edge. The earlier advice "keep the tower about 10 mm from the left and right edges" does not hold for the KOI plate. Check a sliced file with `python3 tools/dock_drops.py file.gcode`: `0 of N` is the safe answer.
 
 ## Which detour point fails on each plate (11 November 2026)
