@@ -37,7 +37,7 @@ class CheckTest(unittest.TestCase):
     def test_one_colour_file_is_clean_not_an_error(self):
         rc, out = run("ring-orcaslicer-2.4.2.gcode.gz")
         self.assertEqual(rc, 0, out)
-        self.assertIn("== 0 of 4", out)
+        self.assertIn("== 0 of 5", out)
 
     def test_by_object_hop_above_the_print_is_not_a_dock_drop(self):
         # OrcaSlicer 2.5.0-rc lowers the new head to 0.4 mm above the finished object; 2.4.1 to its top
