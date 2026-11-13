@@ -22,7 +22,7 @@ class CheckTest(unittest.TestCase):
     def test_clean_file_reports_nothing(self):
         rc, out = run("sign-orca-2.4.0.gcode.gz")
         self.assertEqual(rc, 0, out)
-        self.assertIn("== 0 of 4 checks report this file", out)
+        self.assertIn("== 0 of 5 checks report this file", out)
 
     def test_each_reported_file_names_its_check(self):
         for name, who in (
