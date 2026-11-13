@@ -67,7 +67,22 @@ G1 Z" + (layer_z + move_z) + " F600
 
 (`max_layer_z + move_z` gave the same file on this plate.) The real lift before the tool change is the same 1.5 mm; the slicer now knows where the nozzle is, travels back at layer + 1.9 mm and lowers at the part. `tools/check.py` on that file: 0 of 4 checks report it.
 
+## Getting here with the tower switched on (OrcaSlicer#1119)
+
+The same file can come out of the command line with `enable_prime_tower = 1` in the process settings. [OrcaSlicer#1119](https://github.com/Snapmaker/OrcaSlicer/issues/1119) (Windows, four heads): when the filament files passed to `--load-filaments` share one preset `name`, the 2.4.1 CLI turns the tower off and still exits 0. Reproduced here on macOS with two heads, 13 Nov 2026:
+
+| Input | `--load-filaments` names | Effective `enable_prime_tower` | Tool changes | `dock_drops` | Filament used |
+| --- | --- | ---: | ---: | --- | --- |
+| project .3mf, boxes on extruder 1 and 2 | both `Snapmaker PLA` | 0 | 50 | 42 of 50 (8 more are hops) | 2.16 g, 2.11 g |
+| same .3mf | `Snapmaker PLA 1`, `Snapmaker PLA 2` | 1 | 50 | 0 of 50 | 4.04 g, 4.19 g |
+
+Only the `name` and `filament_settings_id` of the two filament files differ between the rows; colours are `#FFFFFF;#000000` in both G-code files. With `--debug 4` the first row logs `map all the filaments to the same one, load_filament_count 2` and `disable_wipe_tower_after_mapping: disable prime tower for only one filament!`. Loading the two STL files with `--load-filament-ids "1,2"` instead of the project keeps the tower with either naming.
+
+So a script that slices for the U1 can lose the tower without asking for it, and the file it gets is the one above. `python3 tools/check.py file.gcode` exits 1 on it (`dock_drops`); `; enable_prime_tower = 0` in the file's config block next to more than one `T<n>` is the other sign.
+
 ## Not verified
+
+- The #1119 rows: two heads, not the four of the report; the reporter's generator was not run; no firmware run of those two files.
 
 - No firmware run and no print. Whether the head touches the part on the way from the dock depends on where the part is; on the reporter's print it did.
 - One plate, 10 mm tall, two heads, by layer. By object uses the other branch of the template and was not touched.
