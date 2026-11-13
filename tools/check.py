@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Every text check in one go, no Docker: python3 tools/check.py file.gcode (.gcode.gz, sliced .3mf)
 
-Runs dock_drops, tower_below_print, brim_wrong_head, dropped_toolchanges, z_offset_lost, settings_block_short and
-bed_hotter_than_first_layer on the same file and
+Runs dock_drops, tower_below_print, brim_wrong_head, dropped_toolchanges, z_offset_lost, settings_block_short,
+bed_hotter_than_first_layer and toolchange_retraction on the same file and
 prints what each one says. Exit 0 when none reports, 1 when any does, 2 when a file cannot be read.
 These read the file as text; the firmware run (README, "Run it") is still what shows a scar.
 """
@@ -13,11 +13,12 @@ import brim_wrong_head
 import dock_drops
 import dropped_toolchanges
 import settings_block_short
+import toolchange_retraction
 import tower_below_print
 import z_offset_lost
 
 CHECKS = (dock_drops, tower_below_print, brim_wrong_head, dropped_toolchanges, z_offset_lost, settings_block_short,
-          bed_hotter_than_first_layer)
+          bed_hotter_than_first_layer, toolchange_retraction)
 
 
 def main(argv):
