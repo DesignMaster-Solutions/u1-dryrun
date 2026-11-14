@@ -80,7 +80,20 @@ Only the `name` and `filament_settings_id` of the two filament files differ betw
 
 So a script that slices for the U1 can lose the tower without asking for it, and the file it gets is the one above. `python3 tools/check.py file.gcode` exits 1 on it (`dock_drops`); `; enable_prime_tower = 0` in the file's config block next to more than one `T<n>` is the other sign.
 
+## The proposed slicer fix, replayed on these files
+
+[Snapmaker/OrcaSlicer PR 1191](https://github.com/Snapmaker/OrcaSlicer/pull/1191) changes `get_last_z_from_gcode` to follow G90/G91 from the Z the slicer is at. [`tools/last_z_replay.py`](../tools/last_z_replay.py) is a line-by-line port of that function, before and after the PR, run over the 50 tool-change blocks of each file sliced here with the released 2.4.1:
+
+| file | 2.4.1 answer differs from the real Z | PR 1191 answer differs | released file returns at max(layer, answer + 0.4) | same rule with the PR answer |
+|---|---|---|---|---|
+| stock template (`examples/no-tower-return-orca-2.4.1.gcode.gz`) | 50 of 50 (says 1.5) | 0 of 50 | 50 of 50 | layer + 1.9 mm |
+| `move_z = 3.0` | 50 of 50 (says 3.0) | 0 of 50 | 50 of 50 | layer + 3.4 mm |
+| absolute lift (`examples/no-tower-return-orca-2.4.1-absolute-lift.gcode.gz`) | 0 of 50 | 0 of 50 | 50 of 50 | layer + 1.9 mm |
+
+So the function of the PR gives, on the stock template, the answer the absolute-lift template gets from 2.4.1, and that file was sliced: 0 of 50 drops. This is a port of one function in Python, not a build of the PR: the slicer was not compiled and no file was sliced with it.
+
 ## Not verified
+
 
 - The #1119 rows: two heads, not the four of the report; the reporter's generator was not run; no firmware run of those two files.
 
