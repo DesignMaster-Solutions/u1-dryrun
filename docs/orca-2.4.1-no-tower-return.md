@@ -80,6 +80,18 @@ Only the `name` and `filament_settings_id` of the two filament files differ betw
 
 So a script that slices for the U1 can lose the tower without asking for it, and the file it gets is the one above. `python3 tools/check.py file.gcode` exits 1 on it (`dock_drops`); `; enable_prime_tower = 0` in the file's config block next to more than one `T<n>` is the other sign.
 
+### Two more rows: same colour, and a way out on 2.4.1 (PR 1190)
+
+[Snapmaker/OrcaSlicer PR 1190](https://github.com/Snapmaker/OrcaSlicer/pull/1190) proposes to keep the tower when the same-named filaments have different colours. Two more slices of the same project with the released 2.4.1, both filament files named `Snapmaker PLA`, 14 Nov 2026:
+
+| Colours (filament files and project) | Extra CLI option | Effective `enable_prime_tower` | Tool changes | `dock_drops` | Filament used |
+| --- | --- | ---: | ---: | --- | --- |
+| `#FFFFFF`, `#FFFFFF` | none | 0 | 50 | 42 of 50 (8 more are hops) | 2.16 g, 2.11 g |
+| `#FFFFFF`, `#000000` | `--filament-colour "#FFFFFF;#000000"` | 1 | 50 | 0 of 50 | 4.04 g, 4.19 g |
+
+- **Same name and same colour still prints with two heads.** The log says "only one filament", but the file has 50 tool changes and both heads extrude. A rule based on colour keeps this row as it is, so two spools of the same filament on two heads still lose the tower the process file asked for.
+- **Way out today, no new build:** passing the colours on the command line keeps the tower on 2.4.1 (`different filament colours, switch disable_wipe_tower_after_mapping back to false` in the log). Giving each filament file its own `name` does the same (table above).
+
 ## The proposed slicer fix, replayed on these files
 
 [Snapmaker/OrcaSlicer PR 1191](https://github.com/Snapmaker/OrcaSlicer/pull/1191) changes `get_last_z_from_gcode` to follow G90/G91 from the Z the slicer is at. [`tools/last_z_replay.py`](../tools/last_z_replay.py) is a line-by-line port of that function, before and after the PR, run over the 50 tool-change blocks of each file sliced here with the released 2.4.1:
@@ -96,6 +108,7 @@ So the function of the PR gives, on the stock template, the answer the absolute-
 
 
 - The #1119 rows: two heads, not the four of the report; the reporter's generator was not run; no firmware run of those two files.
+- PR 1190 was read, not built: the two extra rows are the released 2.4.1. They show what a colour rule leaves unchanged and what already works, not the PR itself.
 
 - No firmware run and no print. Whether the head touches the part on the way from the dock depends on where the part is; on the reporter's print it did.
 - One plate, 10 mm tall, two heads, by layer. By object uses the other branch of the template and was not touched.
