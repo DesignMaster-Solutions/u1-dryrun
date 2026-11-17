@@ -27,6 +27,17 @@ class TowerBelowPrintTest(unittest.TestCase):
         self.assertEqual(tb.find(lines)[1], [(9, 1.5, 2.7)])
         self.assertEqual(tb.find(lines, max_drop=2)[1], [])
 
+    def test_nearest_part_and_profile_clearances(self):
+        # the fixture gives the tower only X, so it stays at Y80: outline X20.309..34.809, part at X80
+        lines = ["; extruder_clearance_radius = 72.5", "; extruder_clearance_height_to_rod = 27.5"] + LOW
+        gap, height, clear = tb.nearest_part(lines, (12, 0.2, 37.85))
+        self.assertAlmostEqual(gap, 80 - 34.809, places=3)
+        self.assertAlmostEqual(height, 37.65)
+        self.assertEqual(clear, {"extruder_clearance_radius": 72.5, "extruder_clearance_height_to_rod": 27.5})
+        # material printed after the descent, or not above the tower, does not count
+        self.assertEqual(tb.nearest_part(LOW + PART, (1, 0.2, 37.85))[0], None)
+        self.assertEqual(tb.nearest_part(LOW, (10, 40.0, 37.85))[0], None)
+
     def test_exit_codes(self):
         for lines, want in ((LOW, 1), (LEVEL, 0), (PART, 0)):
             with tempfile.NamedTemporaryFile("w", suffix=".gcode", delete=False) as f:
