@@ -28,6 +28,7 @@ class CheckTest(unittest.TestCase):
         for name, who in (
             ("brim-by-object-orca-2.4.1.gcode.gz", "brim_wrong_head"),
             ("no-sparse-layers-orca-2.4.1.gcode.gz", "tower_below_print"),
+            ("no-sparse-layers-orca-2.4.2-alpha.gcode.gz", "tower_below_print"),
             ("tower-right-edge-orca-2.4.1.3mf", "dock_drops"),
             ("bed-for-late-interface-orca-2.4.1.gcode.gz", "bed_hotter_than_first_layer"),
             ("small-area-flow-orca-2.4.1.gcode.gz", "small_area_flow"),
