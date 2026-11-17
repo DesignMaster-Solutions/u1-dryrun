@@ -38,6 +38,17 @@ class ToolchangeRetractionTest(unittest.TestCase):
                 os.unlink(f.name)
         self.assertEqual(tr.main(["x", "/nonexistent.gcode"]), 2)
 
+    def test_real_2_4_2_alpha_slice_gives_head_4_the_printer_value_of_head_1(self):
+        # Official 2.4.2-alpha macOS build, the #1085 project with no filament value: printer 3,4,6,8, head 4 pulls 3.
+        path = os.path.join(HERE, "..", "examples", "toolchange-retraction-printer-value-orca-2.4.2-alpha.gcode.gz")
+        import gzip
+        with gzip.open(path, "rt", errors="replace") as f:
+            want, seen = tr.find(f.read().splitlines())
+        self.assertEqual(want[3], 8.0)
+        self.assertEqual(set(seen[3]), {3.0})
+        self.assertEqual(set(seen[0]), {3.0})
+        self.assertEqual(tr.main(["x", path]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

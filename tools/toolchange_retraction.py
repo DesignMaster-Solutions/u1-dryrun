@@ -3,7 +3,8 @@
 
 When the first filament has two flow variants (filament_flow_step_size = 2,1,1,1), Snapmaker Orca reads
 a later filament's "retraction length when switching tool" from the wrong slot, and the head is parked
-with another length than the one set for its filament (Snapmaker/OrcaSlicer#1085, still there in 2.4.1).
+with another length than the one set for its filament (Snapmaker/OrcaSlicer#1085, still there in 2.4.1; 2.4.2-alpha fixes the filament's own value but a head
+with no value of its own now gets head 1's printer value).
 This reads the G-code as text: the length each leaving head pulls back in the prime tower's unload,
 against the value the settings block gives for that head (the filament's own, else the printer's).
 
@@ -74,7 +75,7 @@ def main(argv):
               f"the file pulls back {', '.join(f'{x:g}' for x in v)} mm.")
     print("Snapmaker/OrcaSlicer#1085: with two flow variants on the first filament, a later filament's length")
     print("is read from the wrong slot, so a head can be parked with another head's length. Measured")
-    print("on 2.4.1: with one flow variant on every filament (filament_flow_step_size = 1,1,1,1) it is right.")
+    print("on 2.4.1 and 2.4.2-alpha: with one flow variant on every filament (filament_flow_step_size = 1,1,1,1) it is right.")
     return 1
 
 
