@@ -35,6 +35,10 @@ class DroppedToolChangesTest(unittest.TestCase):
             heads, tower, _ = dt.find(dt.read_lines(os.path.join(EX, name)))
             self.assertFalse(tower and len(heads) == 1, name)
 
+    def test_alpha_slice_of_the_reporters_files_still_selects_one_head(self):
+        # OrcaSlicer#1124 gist, unchanged, official Snapmaker Orca 2.4.2-alpha (macOS command line)
+        self.assertEqual(dt.main(["x", os.path.join(EX, "dropped-toolchanges-orca-2.4.2-alpha.gcode.gz")]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

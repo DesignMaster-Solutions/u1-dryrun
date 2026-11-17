@@ -53,6 +53,13 @@ class SmallAreaFlowTest(unittest.TestCase):
                 os.unlink(f.name)
         self.assertEqual(sa.main(["x", "/nonexistent.gcode"]), 2)
 
+    def test_real_slices(self):
+        # same bar and plate: Snapmaker Orca 2.4.1 and 2.4.2-alpha leave the flow untouched, OrcaSlicer 2.4.2 compensates
+        ex = os.path.join(HERE, "..", "examples")
+        for name, want in (("small-area-flow-orca-2.4.1.gcode.gz", 1), ("small-area-flow-orca-2.4.2-alpha.gcode.gz", 1),
+                           ("small-area-flow-orcaslicer-2.4.2.gcode.gz", 0)):
+            self.assertEqual(sa.main(["x", os.path.join(ex, name)]), want, name)
+
 
 if __name__ == "__main__":
     unittest.main()

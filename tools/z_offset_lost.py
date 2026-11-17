@@ -66,7 +66,7 @@ def main(argv):
               f"z_offset {offset:+g}; first at line {n} (Z{z:g}, should be Z{layer + offset:g}); "
               f"{len(layers)} layer(s), from Z{layers[0]:g} to Z{layers[-1]:g}.")
         print("Snapmaker/OrcaSlicer#1066: the move down after the start or after a tool change with no prime")
-        print("tower skips z_offset (fixed upstream in OrcaSlicer#11011, not in Snapmaker Orca 2.4.1).")
+        print("tower skips z_offset (fixed upstream in OrcaSlicer#11011, not in Snapmaker Orca 2.4.1 or 2.4.2-alpha).")
         return 1
     print(f"ok: {checked} extruding moves, all at layer height {offset:+g}")
     return 0

@@ -104,7 +104,7 @@ def main(argv):
     d, r, want, _ = max(full, key=lambda g: g[3])
     print(f"SMALL AREA FLOW: the switch is on, but {n} solid infill lines of 2 mm or less carry the full flow "
           f"({r:.0%} of the long lines at {d:.1f} mm; the model asks for {want:.0%}).")
-    print("Snapmaker/OrcaSlicer#1064: Snapmaker Orca 2.4.0 and 2.4.1 write the same moves with the switch on or off;")
+    print("Snapmaker/OrcaSlicer#1064: Snapmaker Orca 2.4.0, 2.4.1 and 2.4.2-alpha write the same moves with the switch on or off;")
     print("OrcaSlicer 2.4.2 compensates the same model. Small solid areas get the full flow.")
     return 1
 
