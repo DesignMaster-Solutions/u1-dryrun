@@ -14,6 +14,8 @@ run sign-orca-2.4.1.gcode.gz 1
 run sign-orca-2.4.1-linux.gcode.gz 1
 run sign-orca-2.4.1-patched-linux.gcode.gz 0
 run ring-orcaslicer-2.4.2.gcode.gz 0
+# The official 2.4.2-alpha AppImage on the same plate and command: the final purge is gone (finalize() is empty), clean.
+run sign-orca-2.4.2-alpha-linux.gcode.gz 0
 # A print that really scratched on a real U1 (file shared by its owner, see README): the same move must keep being flagged.
 run helado-pipewrx-orca-2.4.1.gcode.gz 1
 echo "$out" | grep -q 'SCAR line 130731 ' || { echo "FAIL helado: the scar at line 130731 moved or vanished"; exit 1; }
@@ -28,6 +30,11 @@ run tower-right-edge-orca-2.4.1-wall-gap-off.gcode.gz 1
 # The same plate and tower place (X236.5 Y100) from the official OrcaSlicer 2.5.0-rc, its own U1 profile: no drop at
 # the dock, no crossing. Keeps a multicolour upstream slice with a prime tower in the suite.
 run tower-right-edge-orcaslicer-2.5.0-rc.gcode.gz 0
+# The #1168 project re-sliced with the official 2.4.2-alpha: the final purge scar is gone (#1149), the dock drop is
+# not fixed yet (planned for December), so the same 3 crossings and the one scar of the last tool change remain.
+run tower-right-edge-orca-2.4.2-alpha.gcode.gz 1
+[ "$(echo "$out" | grep -c "^CROSSING line \(9721\|14874\|20457\) ")" = 3 ] || { echo "FAIL tower-right-edge 2.4.2-alpha: expected the 3 crossings at lines 9721, 14874, 20457"; exit 1; }
+[ "$(echo "$out" | grep -c "^SCAR ")" = 1 ] || { echo "FAIL tower-right-edge 2.4.2-alpha: expected only the dock-drop scar, the final purge is gone"; exit 1; }
 run out-of-range.gcode 2
 # What if I skip an object mid-print? Clean without the skip; with it the stock firmware (2.0.0 and
 # 2.1.0, Snapmaker/u1-klipper#22) drags the head 70 mm across the bed on the E-only chute prime.
