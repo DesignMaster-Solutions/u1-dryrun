@@ -60,6 +60,12 @@ def summary(r):
                    " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
                    % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
                       "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
+        v = m.get("verdict")
+        if v:
+            out.append("start block: with head T%d's %s offset %.2f mm the firmware is sent to %s%.2f: %s"
+                       % (v["head"], m["axis"], v["offset_mm"], m["axis"], v["sent"],
+                          "REFUSED, the print stops at line %d (Move out of range)" % m["line"] if v["refused"]
+                          else "fine"))
     if not r["errors"] and not r["scars"] and not r.get("drags") and not r.get("crossings") and not timeout_line(r):
         out.append("clean: firmware accepted every command, no travel across a finished surface")
     return "\n".join(out)

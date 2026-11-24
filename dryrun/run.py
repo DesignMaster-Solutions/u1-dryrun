@@ -79,10 +79,14 @@ def main():
     ap.add_argument("--skip", action="append", metavar="OBJECT@LINE",
                     help="what if I skip this object on the screen when the print is at this file "
                          "line? Runs the file as a real print (virtual_sdcard); repeatable")
+    ap.add_argument("--offset", action="append", metavar="T3=0.12,-1.4",
+                    help="X,Y extruder_offset of a head (Moonraker); with the head that starts the print, the "
+                         "start block line closest to a limit is judged refused or fine; repeatable")
     args = ap.parse_args()
     text = prep_gcode.read_gcode(args.gcode)
     try:
         maps = prep_gcode.parse_maps(args.map)
+        offsets = prep_gcode.parse_offsets(args.offset)
         skips = prep_gcode.parse_skips(args.skip, text)
     except ValueError as e:
         ap.error(str(e))
@@ -95,8 +99,11 @@ def main():
     result = analyze.analyze(os.path.join(args.out, "trace.txt"), clearance=args.clearance,
                              line_types=analyze.line_types_from_gcode(text),
                              e_only_lines=analyze.e_only_lines_from_gcode(text), cut=rc == -1)
+    start_margin = prep_gcode.start_block_margin(text.splitlines())
+    if start_margin:
+        start_margin["verdict"] = prep_gcode.start_verdict(start_margin, offsets, maps)
     result.update(file=os.path.basename(args.gcode), klippy_rc=rc, timeout_s=limit, unmapped_filaments=prep_gcode.unmapped_filaments(text, maps),
-                  start_margin=prep_gcode.start_block_margin(text.splitlines()),
+                  start_margin=start_margin,
                   skips=[{"object": n, "line": l} for n, l in skips])
     with open(os.path.join(args.out, "report.json"), "w") as f:
         json.dump(result, f, indent=2)

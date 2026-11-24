@@ -59,10 +59,13 @@ def start_block_margin(lines):
     first = next((i for i, l in enumerate(lines) if l.startswith(";LAYER_CHANGE")), None)
     if first is None:
         return None
-    absolute, best = True, None
+    absolute, best, tool = True, None, None
     for i in range(first):
         code = lines[i].split(";", 1)[0].strip().upper()
-        if code.startswith(("G90", "G91")):
+        t = TOOL.match(code)
+        if t:
+            tool = int(t.group(1))
+        elif code.startswith(("G90", "G91")):
             absolute = code.startswith("G90")
         elif absolute and MOVE.match(code):
             for axis, value in AXIS.findall(code):
@@ -70,8 +73,36 @@ def start_block_margin(lines):
                 for room, side in ((float(value) - lo, "-"), (hi - float(value), "+")):
                     if best is None or room < best["room_mm"]:
                         best = {"line": i + 1, "code": code, "axis": axis, "target": float(value),
-                                "room_mm": round(room, 3), "side": side}
+                                "room_mm": round(room, 3), "side": side, "tool": tool}
     return best
+
+
+def parse_offsets(specs):
+    """["T3=0.12,-1.4", ...] -> {3: (0.12, -1.4)}: a head's X,Y extruder_offset as Moonraker shows it."""
+    offsets = {}
+    for spec in specs or []:
+        m = re.match(r"^T?([0-3])=(-?\d*\.?\d+),(-?\d*\.?\d+)$", spec.replace(" ", ""), re.I)
+        if not m:
+            raise ValueError("--offset wants T<head 0-3>=<X>,<Y> from Moonraker extruder_offset (T3=0.12,-1.4), got %r"
+                             % spec)
+        offsets[int(m.group(1))] = (float(m.group(2)), float(m.group(3)))
+    return offsets
+
+
+def start_verdict(margin, offsets, maps=()):
+    """Whether the start block's tightest target stays inside the limit once the starting head's offset is added.
+
+    None when the head that runs the start block is unknown or its offset was not given.
+    """
+    if not margin or margin.get("tool") is None:
+        return None
+    head = dict(maps).get(margin["tool"], margin["tool"] if margin["tool"] <= 3 else 0)
+    if head not in offsets:
+        return None
+    offset = offsets[head][0 if margin["axis"] == "X" else 1]
+    lo, hi = LIMITS[margin["axis"]]
+    sent = round(margin["target"] + offset, 3)
+    return {"head": head, "offset_mm": offset, "sent": sent, "refused": not lo <= sent <= hi}
 
 
 NON_ASCII = re.compile(r"[^\x00-\x7f]")

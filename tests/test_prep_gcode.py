@@ -80,6 +80,29 @@ class StartMarginTest(unittest.TestCase):
                       "below -1.00 mm is refused there if it starts the print", report.summary(r))
 
 
+    def test_the_head_that_runs_the_purge_is_named(self):
+        m = prep_gcode.start_block_margin(("T3\n" + self.STOCK[3:] + LAYER).splitlines())
+        self.assertEqual(m["tool"], 3)
+
+    def test_your_offset_turns_the_hint_into_a_verdict(self):
+        import report
+        m = prep_gcode.start_block_margin(("T3\n" + self.STOCK[3:] + LAYER).splitlines())
+        refused = prep_gcode.start_verdict(m, prep_gcode.parse_offsets(["T3=0.1,-1.2"]))
+        self.assertEqual((refused["head"], refused["offset_mm"], refused["refused"]), (3, -1.2, True))
+        ok = prep_gcode.start_verdict(m, prep_gcode.parse_offsets(["T3=0,-0.05", "T0=0,-3"]))
+        self.assertFalse(ok["refused"])
+        self.assertIsNone(prep_gcode.start_verdict(m, prep_gcode.parse_offsets(["T0=0,-3"])))
+        r = {"file": "f.gcode", "moves": 1, "tool_changes": 0, "motion_time_s": None, "tools": {},
+             "errors": [], "scars": [], "start_margin": dict(m, verdict=refused)}
+        self.assertIn("with head T3's Y offset -1.20 mm the firmware is sent to Y-0.20: REFUSED, the print stops "
+                      "at line 6", report.summary(r))
+        r["start_margin"]["verdict"] = ok
+        self.assertIn("with head T3's Y offset -0.05 mm the firmware is sent to Y0.95: fine", report.summary(r))
+
+    def test_bad_offset_is_refused_not_ignored(self):
+        with self.assertRaises(ValueError):
+            prep_gcode.parse_offsets(["T3=-1.2"])
+
 class SkipTest(unittest.TestCase):
     FILE = "EXCLUDE_OBJECT_DEFINE NAME=part_1.stl_id_0 CENTER=1,1\n" + LAYER + "G1 X1 Y1\nG1 X2 Y2\n"
 
