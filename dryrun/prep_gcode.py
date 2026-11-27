@@ -48,32 +48,60 @@ AXIS = re.compile(r"\b([XY])(-?\d*\.?\d+)")
 
 
 def start_block_margin(lines):
-    """The start block's explicit absolute X/Y target closest to a travel limit, or None.
+    """The start block move closest to a travel limit, or None.
 
     The start block is not run (see strip_start_block), but the firmware adds the active head's
     XY offset to each of its moves. Offsets are measured from the midpoint of the four heads
     (extruder.py get_center_base_position), so the lowest head sits at minus half the spread, and
-    a target closer to a limit than that offset is refused (forum topic 44046). Relative moves
-    and axes a line leaves out are not guessed: macros before them move the head.
+    a target closer to a limit than that offset is refused (forum topic 44046). An absolute line
+    names its own target. A relative move is applied only when that axis was set by an earlier
+    absolute move or G92 and no macro or G28 has run since: those move the head, and a relative
+    step from an unknown position is skipped rather than invented. An axis a line leaves out
+    keeps its previous position and is not reported again.
     """
     first = next((i for i, l in enumerate(lines) if l.startswith(";LAYER_CHANGE")), None)
     if first is None:
         return None
     absolute, best, tool = True, None, None
+    pos = {"X": None, "Y": None}
+
+    def note(i, code, axis, target):
+        nonlocal best
+        lo, hi = LIMITS[axis]
+        for room, side in ((target - lo, "-"), (hi - target, "+")):
+            if best is None or room < best["room_mm"]:
+                best = {"line": i + 1, "code": code, "axis": axis, "target": round(target, 3),
+                        "room_mm": round(room, 3), "side": side, "tool": tool}
+
     for i in range(first):
         code = lines[i].split(";", 1)[0].strip().upper()
+        if not code:
+            continue
         t = TOOL.match(code)
         if t:
             tool = int(t.group(1))
-        elif code.startswith(("G90", "G91")):
-            absolute = code.startswith("G90")
-        elif absolute and MOVE.match(code):
+            continue
+        if code.startswith("G92"):
             for axis, value in AXIS.findall(code):
-                lo, hi = LIMITS[axis]
-                for room, side in ((float(value) - lo, "-"), (hi - float(value), "+")):
-                    if best is None or room < best["room_mm"]:
-                        best = {"line": i + 1, "code": code, "axis": axis, "target": float(value),
-                                "room_mm": round(room, 3), "side": side, "tool": tool}
+                pos[axis] = float(value)
+            continue
+        if code.startswith(("G90", "G91")):
+            absolute = code.startswith("G90")
+            continue
+        if MOVE.match(code):
+            for axis, value in AXIS.findall(code):
+                value = float(value)
+                if absolute:
+                    pos[axis] = value
+                    note(i, code, axis, value)
+                elif pos[axis] is not None:
+                    pos[axis] += value
+                    note(i, code, axis, pos[axis])
+            continue
+        # M codes and a dwell do not change XY. Anything else (PRINT_START, G28, a macro) can.
+        if code.startswith("M") or code.startswith("G4"):
+            continue
+        pos = {"X": None, "Y": None}
     return best
 
 

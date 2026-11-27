@@ -71,6 +71,30 @@ class StartMarginTest(unittest.TestCase):
         self.assertIsNone(prep_gcode.start_block_margin("G91\nG1 Y-50\n;LAYER_CHANGE\n".splitlines()))
         self.assertIsNone(prep_gcode.start_block_margin(self.STOCK.splitlines()))
 
+    def test_relative_move_from_a_known_position_can_cross_the_limit(self):
+        # G0 stops at Y2. The next line is relative and steps Y by -3, so the head is sent to Y-1,
+        # which is already outside the bed. Skipping that line (the old behaviour) reported Y2.
+        lines = ["T0", "G90", "G0 X100 Y2", "G91", "G1 Y-3", ";LAYER_CHANGE"]
+        m = prep_gcode.start_block_margin(lines)
+        self.assertEqual((m["line"], m["code"], m["axis"], m["target"], m["room_mm"]),
+                         (5, "G1 Y-3", "Y", -1.0, -1.0))
+        v = prep_gcode.start_verdict(m, prep_gcode.parse_offsets(["T0=0,0"]))
+        self.assertEqual((v["sent"], v["refused"]), (-1.0, True))
+        import report
+        text = report.summary({"file": "f.gcode", "moves": 1, "tool_changes": 0, "motion_time_s": None,
+                               "tools": {}, "errors": [], "scars": [], "start_margin": m})
+        self.assertIn("line 5 (G1 Y-3) is already past the Y limit, at Y-1.00, before any head offset", text)
+
+    def test_g92_sets_the_position_a_relative_move_starts_from(self):
+        lines = ["T0", "G91", "G92 Y2", "G1 Y-3", ";LAYER_CHANGE"]
+        m = prep_gcode.start_block_margin(lines)
+        self.assertEqual((m["line"], m["target"]), (4, -1.0))
+
+    def test_a_macro_forgets_the_position_so_the_relative_move_is_not_applied(self):
+        lines = ["T0", "G90", "G0 X100 Y20", "G28 X Y", "G91", "G1 Y-100", ";LAYER_CHANGE"]
+        m = prep_gcode.start_block_margin(lines)
+        self.assertEqual((m["line"], m["target"], m["room_mm"]), (3, 20.0, 20.0))
+
     def test_summary_names_the_offset_that_is_refused(self):
         import report
         m = prep_gcode.start_block_margin((self.STOCK + LAYER).splitlines())

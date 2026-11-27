@@ -56,10 +56,14 @@ def summary(r):
                    % (", ".join("T%d" % t for t in r["unmapped_filaments"]), r["unmapped_filaments"][0]))
     m = r.get("start_margin")
     if m:
-        out.append("start block: line %d (%s) leaves %.2f mm to the %s limit: a head with a %s offset %s %s%.2f mm"
-                   " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
-                   % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
-                      "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
+        if m["room_mm"] < 0:
+            out.append("start block: line %d (%s) is already past the %s limit, at %s%.2f, before any head offset"
+                       % (m["line"], m["code"], m["axis"], m["axis"], m["target"]))
+        else:
+            out.append("start block: line %d (%s) leaves %.2f mm to the %s limit: a head with a %s offset %s %s%.2f mm"
+                       " is refused there if it starts the print (head offsets: Moonraker extruder_offset)"
+                       % (m["line"], m["code"], m["room_mm"], m["axis"], m["axis"],
+                          "below" if m["side"] == "-" else "above", m["side"], m["room_mm"]))
         v = m.get("verdict")
         if v:
             out.append("start block: with head T%d's %s offset %.2f mm the firmware is sent to %s%.2f: %s"
