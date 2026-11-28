@@ -81,7 +81,7 @@ def reply(summary, rc, version, run_url, checks=""):
     summary = summary.replace("```", "'''")[:55000]
     text = ""
     if checks.strip():
-        text = ("\n\nSeparately, four checks that read the file as text, with no firmware (`tools/check.py`). They look "
+        text = ("\n\nSeparately, the checks that read the file as text, with no firmware (`tools/check.py`). They look "
                 "for patterns owners have reported on the forum and say nothing about a scar:\n\n"
                 "```\n%s\n```" % checks.replace("```", "'''").strip()[:5000])
     return (
